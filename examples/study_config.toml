@@ -1,0 +1,30 @@
+[survey]
+name = "Clinical Interactions & Trainee Well-Being"
+min_score = 1
+max_score = 7
+
+# QUALITY CONTROL
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+
+# SCALES
+[scales.emotional_exhaustion]
+items = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]
+reverse_scored = [] 
+
+[scales.depersonalization]
+items = ["Q10", "Q11", "Q12", "Q13", "Q14"]
+reverse_scored = []
+
+[scales.supervision_rapport]
+items = ["SWAI_1", "SWAI_2", "SWAI_3", "SWAI_4", "SWAI_5", "SWAI_6", "SWAI_7", "SWAI_8", "SWAI_9", "SWAI_10", "SWAI_11", "SWAI_12"]
+reverse_scored = []
+
+[scales.peer_support]
+items = ["MSPSS_1", "MSPSS_2", "MSPSS_3", "MSPSS_4"]
+reverse_scored = []
+
+[scales.alliance_total]
+items = ["WAI_1", "WAI_2", "WAI_3", "WAI_4", "WAI_5", "WAI_6", "WAI_7", "WAI_8", "WAI_9", "WAI_10", "WAI_11", "WAI_12"]
+reverse_scored = ["WAI_4", "WAI_10"]

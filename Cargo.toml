@@ -1,0 +1,23 @@
+[package]
+name = "prism"
+version = "0.1.0"
+edition = "2021"
+description = "Psychology survey data processing pipeline - Automated scoring, quality checks, and statistical reporting"
+authors = ["Shuvi"]
+license = "MIT"
+repository = "https://github.com/artlostintime/prism"
+keywords = ["psychology", "survey", "psychometrics", "research", "data-processing"]
+categories = ["command-line-utilities", "science"]
+
+[dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.53", features = ["derive"] }
+csv = "1.4.0"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "0.9.10"
+chrono = "0.4"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+ctor = "0.2"

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prism</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f3f3f3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 350px;
+      }
+      h1 {
+        color: #333;
+        margin-top: 0;
+      }
+      p {
+        color: #666;
+        margin-bottom: 2rem;
+      }
+
+      button {
+        background-color: #0078d4;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: background 0.2s;
+        width: 100%;
+      }
+      button:hover {
+        background-color: #005a9e;
+      }
+
+      #status {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        word-break: break-all; /* Ensures long paths don't break layout */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Prism</h1>
+      <p>Psychology Research Pipeline</p>
+
+      <button onclick="selectFile()">📂 Select CSV File</button>
+
+      <div id="status">Ready.</div>
+    </div>
+
+    <script>
+      async function selectFile() {
+        const statusLabel = document.getElementById("status");
+        const btn = document.querySelector("button");
+
+        statusLabel.style.color = "#666";
+        statusLabel.innerText = "Opening file picker...";
+
+        try {
+          // 1. Pick the file
+          const filePath = await window.__TAURI__.core.invoke("pick_file");
+
+          if (!filePath) {
+            statusLabel.innerText = "Selection cancelled.";
+            return;
+          }
+
+          // 2. File picked! Now Run Analysis automatically
+          statusLabel.style.color = "#0078d4"; // Blue
+          statusLabel.innerText = "Processing: " + filePath;
+          btn.disabled = true; // Disable button while working
+
+          // 3. Call the Engine
+          const result = await window.__TAURI__.core.invoke("run_analysis", {
+            inputPath: filePath,
+          });
+
+          // 4. Show Result
+          if (result.includes("Success")) {
+            statusLabel.style.color = "#28a745"; // Green
+          } else {
+            statusLabel.style.color = "#d9534f"; // Red
+          }
+          statusLabel.innerText = result;
+        } catch (error) {
+          console.error(error);
+          statusLabel.style.color = "#d9534f"; // Red
+          statusLabel.innerText = "System Error: " + error;
+        } finally {
+          btn.disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+# Build outputs
+/target/
+/src-tauri/target/
+**/*.rs.bk
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.fleet/
+.helix/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.temp
+
+# Testing outputs
+/data/processed/*.csv
+/data/processed/*.txt
+/tests/output/*.csv
+/tests/output/*.txt
+
+# Generated files (don't commit outputs)
+clean_data.csv
+test_bad.csv
+*_clean.csv
+*_output.csv
+summary_stats.txt
+quality_report.txt
+*.log
+
+# Allow example files
+!examples/*.csv
+!examples/*.toml
+
+# Rust
+Cargo.lock  # Keep if binary, remove if library
+*.pdb
+*.rlib
+*.rmeta
+
+# Backup and temporary
+*~
+*.bak
+*.backup
+.#*
+
+# Environment
+.env
+.env.local
