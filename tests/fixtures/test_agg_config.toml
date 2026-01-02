@@ -1,0 +1,11 @@
+[survey]
+name = "Agg Test"
+min_score = 1
+max_score = 5
+
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+
+[scales.test]
+items = ["q1", "q2"]

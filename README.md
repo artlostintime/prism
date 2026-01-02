@@ -1,403 +1,513 @@
 # Prism 🔍
 
-**Psychology Survey Data Pipeline**
+> **Stop wasting hours on Excel. Process your psychology survey data in seconds.**
 
-_Transforming raw survey data into analysis-ready insights_
+Hey there, researcher! 👋 If you've ever spent 45+ minutes manually reverse-scoring surveys, calculating scale totals, and hunting for data quality issues in Excel... this tool is for you.
 
----
-
-Prism automates the tedious parts of psychology research data processing: reverse-scoring, scale computation, quality control, and statistical reporting. What used to take 45+ minutes of manual Excel work now takes 30 seconds.
-
-⏱️ **Time Saved:** 45-60 minutes of manual work → 30 seconds automated
+Prism does all that boring stuff automatically, so you can focus on what actually matters: **understanding your data**.
 
 ---
 
-## Features
+## 🎯 What Does Prism Do?
 
-### ✅ Core Processing
+Think of Prism as your research assistant that:
 
-- **Automatic reverse scoring** - Specify items in config, handled automatically
-- **Scale score calculation** - Total and mean scores for each scale
-- **Configurable surveys** - Define any survey structure via TOML config
-- **CSV input/output** - Works with standard survey export formats
+1. **Reverse-scores items automatically** (no more Excel formulas!)
+2. **Calculates scale totals and means** (instantly, no errors)
+3. **Finds data quality issues** (straightliners, missing data, weird responses)
+4. **Generates statistical reports** (with Cronbach's alpha and everything)
+5. **Exports in multiple formats** (Excel, SPSS, R, JSON... you name it)
 
-### ✅ Quality Checks
-
-- **Straightlining detection** - Flags participants answering all items identically
-- **Missing data analysis** - Identifies scales with >threshold% missing responses
-- **Out-of-range detection** - Catches data entry errors outside valid scale range
-- **Quality flagging** - All issues tracked per participant
-
-### ✅ Statistical Reporting
-
-- **Aggregate statistics** - Mean, SD, min, max, N across all participants
-- **Summary statistics file** - Formatted report with all scale statistics
-- **Quality report** - Detailed breakdown of all data quality issues
-
-### ✅ Dual Interface
-
-- **Command-line tool** - For batch processing and automation
-- **GUI application** - Simple desktop app for non-technical users
+**Real talk:** What used to take me 45-60 minutes in Excel now takes 30 seconds. ⚡
 
 ---
 
-## Quick Start
+## 🚀 Getting Started (Super Easy!)
 
-### Installation
+### Step 1: Install Rust
 
-1. **Install Rust** (if not already installed):
+Don't worry, it's just one command. Copy and paste this:
 
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-
-2. **Build the CLI**:
-
-   ```bash
-   cargo build --release
-   ```
-
-3. **Optional: Build the GUI**:
-   ```bash
-   cd src-tauri
-   cargo tauri build
-   ```
-
-### Usage
-
-#### Command-Line Interface
-
-**Basic usage:**
+**On Mac/Linux:**
 
 ```bash
-prism --input data.csv --config survey.toml --output clean_data.csv
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-**With quality reports:**
+**On Windows:**
+Download from [rustup.rs](https://rustup.rs/) and run the installer.
+
+### Step 2: Build Prism
 
 ```bash
-prism \
-  --input data.csv \
-  --config survey.toml \
-  --output clean_data.csv \
-  --stats-output summary.txt \
-  --quality-report quality.txt
+cargo build --release
 ```
 
-**Arguments:**
+Go grab a coffee ☕ — this takes about 2-3 minutes the first time.
 
-- `-i, --input <FILE>` - Raw CSV data file
-- `-c, --config <FILE>` - TOML configuration file
-- `-o, --output <FILE>` - Output CSV path (default: `clean_data.csv`)
-- `--stats-output <FILE>` - Generate summary statistics file (optional)
-- `--quality-report <FILE>` - Generate quality report file (optional)
+### Step 3: You're Done! 🎉
 
-#### GUI Application
-
-1. Launch the app
-2. Click "Select CSV File"
-3. Results are automatically saved to `clean_data.csv`
+The program is now ready in `target/release/prism` (or `prism.exe` on Windows).
 
 ---
 
-## Configuration
+## 💡 Your First Run (In 3 Minutes)
 
-Create a `.toml` file defining your survey structure:
+Let's say you have a burnout survey with questions Q1-Q20, and you need to:
+
+- Reverse-score some items
+- Calculate three scale scores
+- Check data quality
+
+### 1️⃣ Create Your Config File
+
+Run this to get a template:
+
+```bash
+prism generate --template > my_survey.toml
+```
+
+Open `my_survey.toml` and edit it to match your survey:
 
 ```toml
 [survey]
-name = "Burnout Study"
-min_score = 1
-max_score = 7
+name = "My Burnout Study"
+min_score = 1    # Your scale's minimum (e.g., 1 = "Strongly Disagree")
+max_score = 7    # Your scale's maximum (e.g., 7 = "Strongly Agree")
 
 [quality]
-max_missing_percent = 0.10  # Flag if >10% missing
-flag_straightlining = true
+max_missing_percent = 0.10      # Flag if someone skips >10% of items
+flag_straightlining = true      # Catch people who answer "3" to everything
 
 [scales.emotional_exhaustion]
 items = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]
-reverse_scored = []
+reverse_scored = []  # None are reversed
 
 [scales.depersonalization]
 items = ["Q10", "Q11", "Q12", "Q13", "Q14"]
-reverse_scored = []
+reverse_scored = ["Q12"]  # Q12 is reverse-scored
 
 [scales.personal_accomplishment]
 items = ["Q15", "Q16", "Q17", "Q18", "Q19", "Q20"]
-reverse_scored = ["Q15", "Q16", "Q17", "Q18", "Q19", "Q20"]  # All reversed
+reverse_scored = ["Q15", "Q16", "Q17", "Q18", "Q19", "Q20"]  # All reversed!
 ```
 
-### Config Fields
+### 2️⃣ Process Your Data
 
-**`[survey]`**
+```bash
+prism process -i my_data.csv -c my_survey.toml -o clean_data.csv --all-outputs
+```
 
-- `name` - Study name (appears in reports)
-- `min_score` - Minimum valid response value
-- `max_score` - Maximum valid response value
+That's it! You'll get:
 
-**`[quality]` (optional)**
-
-- `max_missing_percent` - Threshold for missing data flags (0.0-1.0)
-- `flag_straightlining` - Enable straightlining detection (true/false)
-
-**`[scales.<scale_name>]`**
-
-- `items` - List of column names for this scale
-- `reverse_scored` - List of items to reverse-score (optional)
+- ✅ `clean_data.csv` - Your data with computed scale scores
+- ✅ `summary_stats.txt` - Means, SDs, Cronbach's alpha for each scale
+- ✅ `quality_report.txt` - List of any data quality issues
 
 ---
 
-## Examples
+## 📚 Common Tasks (Copy & Paste Ready)
 
-### Input CSV
+### Just Process Data (Basics)
 
-```csv
-id,Q1,Q2,Q3,Q4,Q5
-P001,5,6,7,6,5
-P002,3,3,3,3,3
-P003,1,2,3,4,5
+```bash
+prism process -i data.csv -c config.toml -o clean.csv
 ```
 
-### Config
+### Get Statistics + Quality Report
+
+```bash
+prism process -i data.csv -c config.toml -o clean.csv --all-outputs
+```
+
+### Export to Excel Instead of CSV
+
+```bash
+prism process -i data.csv -c config.toml -o clean.csv --format excel
+```
+
+### Check If Your Config is Correct (Before Running)
+
+```bash
+prism validate -c config.toml -i data.csv
+```
+
+### Preview What Would Happen (Dry Run)
+
+```bash
+prism process -i data.csv -c config.toml --dry-run
+```
+
+### Process Multiple Studies at Once
+
+Create a file called `batch.txt`:
+
+```
+study1_data.csv
+study2_data.csv
+study3_data.csv
+```
+
+Then run:
+
+```bash
+prism process --batch batch.txt -c config.toml -o output.csv
+```
+
+---
+
+---
+
+## 🔧 Understanding the Config File
+
+The config file tells Prism about your survey. Here's what each part does:
+
+### The Survey Section (Required)
 
 ```toml
 [survey]
-name = "Test Study"
+name = "My Study"           # What you want to call your study
+min_score = 1               # Lowest possible response (e.g., 1 = "Never")
+max_score = 7               # Highest possible response (e.g., 7 = "Always")
+```
+
+**💡 Tip:** If someone enters an "8" on a 1-7 scale, Prism catches it automatically!
+
+### The Quality Section (Optional but Recommended)
+
+```toml
+[quality]
+max_missing_percent = 0.10    # Flag if >10% of items are missing
+flag_straightlining = true    # Catch people answering the same to everything
+min_response_variance = 0.5   # Flag low variation in responses (optional)
+```
+
+**Real example:** If someone answers [3, 3, 3, 3, 3] to all items, that's straightlining and gets flagged.
+
+### The Scales Section (This is where the magic happens!)
+
+```toml
+[scales.depression]
+items = ["Q1", "Q2", "Q3", "Q4", "Q5"]
+reverse_scored = ["Q2", "Q4"]  # These get flipped automatically
+```
+
+**What "reverse-scored" means:**
+
+- Normal item: Response of 7 = score of 7
+- Reverse item: Response of 7 = score of 1 (it gets flipped!)
+- Formula: `reversed_score = (max + min) - original_score`
+
+### Handling Messy Column Names (Super Useful!)
+
+Sometimes Qualtrics exports messy names like `Q1_Depression_VeryLongName`. Map them:
+
+```toml
+[column_mappings]
+"Q1_Depression_VeryLongName" = "Q1"
+"Q2_Depression_AnotherLongName" = "Q2"
+```
+
+Now you can just use "Q1", "Q2" in your scale definitions. Much cleaner!
+
+---
+
+## 📊 Understanding the Output
+
+### What You Get
+
+After running Prism, you'll have:
+
+**1. `clean_data.csv`** - Your original data + new columns:
+
+```
+original_columns..., depression_total, depression_mean, anxiety_total, anxiety_mean, quality_flag
+```
+
+**2. `summary_stats.txt`** - The good stuff:
+
+```
+SCALE: Depression (5 items)
+  Mean (M)              = 3.45
+  Standard Deviation    = 1.23
+  Range                 = [1.20, 6.80]
+  N                     = 150
+  Cronbach's Alpha (α)  = 0.87  (Good)
+```
+
+**💡 Cronbach's Alpha Cheat Sheet:**
+
+- **> 0.90** = Excellent (you can trust this scale!)
+- **0.80-0.89** = Good
+- **0.70-0.79** = Acceptable
+- **< 0.70** = Questionable (might want to check your items)
+
+**3. `quality_report.txt`** - Red flags:
+
+```
+Straightlining (5 occurrences):
+  • Participant P042: Straightlining in Depression scale
+  • Participant P103: Straightlining in Anxiety scale
+```
+
+### The Quality Flag Column
+
+Every participant gets a quality flag:
+
+- **"OK"** = Clean data, no issues ✅
+- **"Straightlining: depression"** = Answered same to all items in that scale ⚠️
+- **"High missing data: anxiety (40% missing)"** = Skipped too many questions ⚠️
+- **"Missing: stress"** = Skipped the entire scale ❌
+
+You can use this in your analysis to decide whether to exclude participants.
+
+---
+
+## 🎓 Real-World Example (Burnout Study)
+
+Let's walk through a complete example using the Maslach Burnout Inventory.
+
+### Your Survey Data (`burnout_responses.csv`)
+
+```csv
+ParticipantID,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,Q15,Q16,Q17,Q18,Q19,Q20,Q21,Q22
+P001,6,6,7,6,5,6,7,6,6,2,1,2,1,3,5,6,5,6,6,5,6,5
+P002,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+P003,1,2,3,4,5,4,3,2,1,1,2,1,2,1,6,5,6,5,6,5,6,5
+...
+```
+
+### Your Config (`mbi_config.toml`)
+
+```toml
+[survey]
+name = "Teacher Burnout Study 2024"
 min_score = 1
 max_score = 7
 
 [quality]
-max_missing_percent = 0.20
+max_missing_percent = 0.10
 flag_straightlining = true
+min_response_variance = 0.5
 
-[scales.stress]
-items = ["Q1", "Q2", "Q3"]
-reverse_scored = ["Q2"]
-
-[scales.coping]
-items = ["Q4", "Q5"]
+# Emotional Exhaustion subscale (9 items)
+[scales.emotional_exhaustion]
+items = ["Q1", "Q2", "Q3", "Q6", "Q8", "Q13", "Q14", "Q16", "Q20"]
 reverse_scored = []
+
+# Depersonalization subscale (5 items)
+[scales.depersonalization]
+items = ["Q5", "Q10", "Q11", "Q15", "Q22"]
+reverse_scored = []
+
+# Personal Accomplishment subscale (8 items - all reversed!)
+[scales.personal_accomplishment]
+items = ["Q4", "Q7", "Q9", "Q12", "Q17", "Q18", "Q19", "Q21"]
+reverse_scored = ["Q4", "Q7", "Q9", "Q12", "Q17", "Q18", "Q19", "Q21"]
 ```
 
-### Output: `clean_data.csv`
+### Run It
+
+```bash
+prism process \
+  -i burnout_responses.csv \
+  -c mbi_config.toml \
+  -o clean_burnout.csv \
+  --all-outputs
+```
+
+### What You Get
+
+**`clean_burnout.csv`:**
 
 ```csv
-id,Q1,Q2,Q3,Q4,Q5,stress_total,stress_mean,coping_total,coping_mean,quality_flag
-P001,5,6,7,6,5,14.00,4.67,11.00,5.50,OK
-P002,3,3,3,3,3,11.00,3.67,6.00,3.00,Straightlining: stress; Straightlining: coping
-P003,1,2,3,4,5,10.00,3.33,9.00,4.50,OK
+ParticipantID,...,emotional_exhaustion_total,emotional_exhaustion_mean,depersonalization_total,depersonalization_mean,personal_accomplishment_total,personal_accomplishment_mean,quality_flag
+P001,...,53.00,5.89,9.00,1.80,45.00,5.63,OK
+P002,...,27.00,3.00,15.00,3.00,24.00,3.00,Straightlining: emotional_exhaustion; Straightlining: depersonalization; Straightlining: personal_accomplishment
+P003,...,20.00,2.22,7.00,1.40,44.00,5.50,OK
 ```
 
-### Output: `summary_stats.txt`
+**Key insight:** P002 is straightlining (answering "3" to everything) and gets flagged automatically!
 
-```
-TEST STUDY - Summary Statistics
-Generated: 2026-01-02 10:31:30
+### Import into SPSS
 
-Total Participants: 3
-Complete Responses: 3 (100.0%)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SCALE: stress (3 items)
-Items: Q1, Q2*, Q3  (* = reverse scored)
-
-  Mean (M)              = 3.89
-  Standard Deviation    = 0.69
-  Range                 = [3.33, 4.67]
-  N                     = 3
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SCALE: coping (2 items)
-Items: Q4, Q5
-
-  Mean (M)              = 4.33
-  Standard Deviation    = 1.26
-  Range                 = [3.00, 5.50]
-  N                     = 3
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-DATA QUALITY: 2 issues detected (see quality report for details)
-```
-
-### Output: `quality_report.txt`
-
-```
-DATA QUALITY REPORT
-Generated: 2026-01-02 10:31:30
-
-Total Participants: 3
-Flagged Issues: 2
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Straightlining (2 occurrences):
-
-  • Participant P002: Straightlining: stress
-  • Participant P002: Straightlining: coping
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-RECOMMENDATIONS:
-• Review flagged participants manually
-• Consider excluding straightliners from analysis
-• Check out-of-range values for data entry errors
-• Assess whether missing data is random or systematic
-```
-
----
-
-## Architecture
-
-Prism uses a **minimal wrapper design** to avoid code duplication:
-
-```
-GUI (Tauri Desktop App)
-    ↓ calls via subprocess
-CLI Binary (Rust)
-    ├── Config parsing
-    ├── CSV processing
-    ├── Scale calculations
-    ├── Quality checks
-    └── Report generation
-```
-
-**Benefits:**
-
-- ✅ Single source of truth - all logic in CLI
-- ✅ Easy to maintain - changes affect both interfaces
-- ✅ Testable - CLI is independently testable
-- ✅ Scriptable - CLI can be used in automation
-
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for details.
-
----
-
-## Project Structure
-
-```
-prism/
-├── src/              # CLI implementation
-│   ├── main.rs
-│   └── config.rs
-├── src-tauri/        # GUI wrapper
-│   └── src/lib.rs
-├── ui/               # GUI frontend
-│   └── index.html
-├── examples/         # Sample data and configs
-│   ├── sample_data.csv
-│   └── study_config.toml
-├── tests/            # Test suite
-│   └── fixtures/
-├── docs/             # Documentation
-│   ├── HOW_TO_USE.md
-│   ├── ARCHITECTURE.md
-│   └── ...
-└── data/             # Local testing (gitignored)
-    ├── raw/
-    └── processed/
-```
-
----
-
-## Quality Checks
-
-### Straightlining
-
-Detects participants who answer all items in a scale identically (e.g., all 5s, all 3s). Common indicator of careless responding.
-
-**Example:** All responses = [3, 3, 3, 3, 3]
-
-### Missing Data
-
-Flags scales where a participant has more than the threshold percentage of items missing.
-
-**Example:** Config sets `max_missing_percent = 0.10`, participant missing 2/5 items (40%) → Flagged
-
-### Out-of-Range
-
-Detects values outside the valid scale range, indicating data entry errors.
-
-**Example:** Response = 9 on a 1-7 scale → Flagged
-
----
-
-## Real-World Use Cases
-
-### Burnout Study (Maslach Burnout Inventory)
+Want to use SPSS for your analyses?
 
 ```bash
-prism \
-  --input burnout_responses.csv \
-  --config mbi_config.toml \
-  --output clean_burnout.csv \
-  --stats-output burnout_stats.txt \
-  --quality-report burnout_quality.txt
+prism process -i burnout_responses.csv -c mbi_config.toml -o clean.csv --format spss
 ```
 
-### Longitudinal Data
+This generates `clean.sps` with the import syntax. Just open it in SPSS and run!
 
-Process multiple timepoints:
+---
+
+## 🚨 Troubleshooting (When Things Go Wrong)
+
+### "Item 'Q5' not found in CSV headers"
+
+**Problem:** Your config mentions "Q5" but your CSV doesn't have that column.
+
+**Solution:** Check your column names. Maybe it's "q5" (lowercase) or "Question5"?
+
+**Pro tip:** Use column mappings:
+
+```toml
+[column_mappings]
+"Question5" = "Q5"
+```
+
+### "Could not parse TOML config"
+
+**Problem:** There's a syntax error in your config file.
+
+**Common mistakes:**
+
+- ❌ Forgot quotes around strings: `name = My Study`
+- ✅ Fixed: `name = "My Study"`
+
+- ❌ Typo in section name: `[scales.depresion]`
+- ✅ Fixed: `[scales.depression]`
+
+**Pro tip:** Run `prism validate -c config.toml -i data.csv` first!
+
+### Numbers Look Wrong
+
+**Problem:** Scale means are way off.
+
+**Checklist:**
+
+1. Did you specify reverse-scored items correctly?
+2. Is your `min_score` and `max_score` correct?
+3. Are column names mapped correctly if using messy exports?
+
+**Debug trick:** Use `--dry-run` to preview:
 
 ```bash
-for timepoint in T1 T2 T3; do
-  prism --input ${timepoint}_data.csv \
-        --config survey_config.toml \
-        --output clean_${timepoint}.csv
+prism process -i data.csv -c config.toml --dry-run
+```
+
+### "Help! I Have Messy Qualtrics Export Names!"
+
+Your CSV has columns like:
+
+```
+Duration..in.seconds., Q1_1, Q2_1, Q3_1_TEXT
+```
+
+**Solution 1:** Rename them in Excel first (easiest)
+
+**Solution 2:** Use column mappings:
+
+```toml
+[column_mappings]
+"Q1_1" = "Q1"
+"Q2_1" = "Q2"
+"Q3_1_TEXT" = "Q3"
+```
+
+---
+
+## 💪 Advanced Features (For Power Users)
+
+### Export to Multiple Formats at Once
+
+```bash
+# Get CSV + Excel + SPSS syntax + R script
+prism process -i data.csv -c config.toml -o output.csv --format excel
+prism process -i data.csv -c config.toml -o output.csv --format spss
+prism process -i data.csv -c config.toml -o output.csv --format r
+```
+
+### Fine-Tune Your Output
+
+```toml
+[output]
+decimal_places = 3        # Want more precision? (default: 2)
+include_item_scores = true  # Include individual item scores in output
+```
+
+### Detect More Quality Issues
+
+```toml
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+min_response_variance = 0.5        # Flag low variance (optional)
+max_response_time = 300            # Flag if >5 minutes (optional)
+min_response_time = 30             # Flag if <30 seconds (optional)
+```
+
+### Process Data from Multiple Time Points
+
+```bash
+# Longitudinal study with 3 waves
+for wave in Wave1 Wave2 Wave3; do
+  prism process \
+    -i ${wave}_data.csv \
+    -c survey_config.toml \
+    -o clean_${wave}.csv \
+    --all-outputs
 done
 ```
 
-### Integration with R/SPSS
-
-Output CSV can be directly imported into statistical software:
-
-```r
-# R example
-data <- read.csv("clean_data.csv")
-summary(data$emotional_exhaustion_mean)
-```
-
 ---
 
-## 📖 Documentation
-
-**[📚 Visit the Complete Wiki →](docs/README.md)**
+## 📖 Need More Help?
 
 ### Quick Links
 
-**Getting Started:**
+- **[Complete Tutorial](docs/TUTORIAL.md)** - Step-by-step walkthrough with screenshots
+- **[FAQ](docs/FAQ.md)** - Common questions answered
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Detailed error solutions
+- **[Best Practices](docs/BEST_PRACTICES.md)** - Tips from experienced users
 
-- [Installation Guide](docs/INSTALLATION.md) - Setup and requirements
-- [Tutorial](docs/TUTORIAL.md) - Step-by-step walkthrough
-- [How to Use](docs/HOW_TO_USE.md) - Complete usage guide
-- [Quick Reference](docs/QUICK_REFERENCE.md) - Command cheat sheet
+### Video Tutorials (Coming Soon!)
 
-**User Guides:**
+We're working on video guides for:
 
-- [Configuration Guide](docs/CONFIGURATION_GUIDE.md) - Config file reference
-- [Quality Checks](docs/QUALITY_CHECKS.md) - Understanding quality reports
-- [Workflow Examples](docs/WORKFLOW_EXAMPLE.md) - Real-world scenarios
-- [Best Practices](docs/BEST_PRACTICES.md) - Tips and recommendations
-
-**Reference:**
-
-- [FAQ](docs/FAQ.md) - Frequently asked questions
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
-- [Glossary](docs/GLOSSARY.md) - Terminology definitions
-
-**For Developers:**
-
-- [Architecture](docs/ARCHITECTURE.md) - System design
-- [API Reference](docs/API_REFERENCE.md) - Technical documentation
-- [Development Guide](docs/DEVELOPMENT.md) - Local setup
-- [Contributing](docs/CONTRIBUTING.md) - How to contribute
-- [Testing Guide](docs/TESTING.md) - Testing practices
+- Setting up your first survey
+- Handling Qualtrics exports
+- Interpreting quality reports
+- Integrating with R/SPSS
 
 ---
 
-## Development
+## 🤝 Contributing
+
+Found a bug? Have a feature idea? Want to improve the docs?
+
+**We'd love your help!** Check out [CONTRIBUTING.md](docs/CONTRIBUTING.md) to get started.
+
+Even fixing a typo in the docs helps. Seriously. 💙
+
+---
+
+## 📝 License
+
+MIT License - Use it however you want! See [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with frustration from spending too many hours in Excel. 😅
+
+Special thanks to every researcher who's ever thought: _"There has to be a better way to do this."_
+
+---
+
+## Quick Start (Again, Because It's That Simple)
+
+1. **Install:** `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+2. **Build:** `cargo build --release`
+3. **Generate config:** `prism generate --template > my_config.toml`
+4. **Edit config** to match your survey
+5. **Run:** `prism process -i data.csv -c my_config.toml -o clean.csv --all-outputs`
+6. **Done!** Check your `clean.csv`, `summary_stats.txt`, and `quality_report.txt`
+
+**Questions?** Open an issue on GitHub or check the [FAQ](docs/FAQ.md).
+
+Now go process some data! 🚀
 
 ### Running Tests
 

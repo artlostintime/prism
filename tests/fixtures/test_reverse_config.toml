@@ -1,0 +1,12 @@
+[survey]
+name = "Reverse Test"
+min_score = 1
+max_score = 5
+
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+
+[scales.test_scale]
+items = ["item1", "item2", "item3"]
+reverse_scored = ["item2"]

@@ -1,25 +1,20 @@
 // src/main.rs
-mod config;
-
-use anyhow::{anyhow, Context, Result};
-use clap::Parser;
-use config::SurveyConfig;
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand};
+use indicatif::{ProgressBar, ProgressStyle};
+use log::{debug, info};
+use prism::{
+    config::SurveyConfig,
+    output::*,
+    processor::{get_participant_id, process_quality_checks, process_scale},
+    stats::Stats,
+    types::{OutputFormat, QualityIssue},
+    validation::{generate_config_template, validate_batch_file, validate_config},
+    DEFAULT_QUALITY_FILE, DEFAULT_STATS_FILE, QUALITY_FLAG_OK, QUALITY_FLAG_SEPARATOR,
+};
 use std::collections::HashMap;
 use std::fs;
-
-// Constants
-const FLOAT_EPSILON: f64 = 1e-10;
-const QUALITY_FLAG_OK: &str = "OK";
-const QUALITY_FLAG_SEPARATOR: &str = "; ";
-
-// Helper struct for scale processing results
-#[derive(Debug)]
-struct ScaleResult {
-    total: f64,
-    mean: f64,
-    valid_items: usize,
-    item_values: Vec<f64>,
-}
+use std::time::Instant;
 
 /// Prism - Psychology Survey Data Pipeline
 #[derive(Parser)]
@@ -27,170 +22,227 @@ struct ScaleResult {
     author,
     version,
     about = "Psychology survey data processing with automated scoring and quality control",
-    long_about = "Prism transforms raw survey data into analysis-ready datasets with automated \nreverse-scoring, scale computation, quality checks, and statistical reporting. \nDesigned for psychology researchers who need accurate results fast."
+    long_about = "Prism transforms raw survey data into analysis-ready datasets with automated \nreverse-scoring, scale computation, quality checks, and statistical reporting. \nDesigned for psychology researchers who need accurate results fast.",
+    after_help = "EXAMPLES:\n    prism process -i data.csv -c config.toml -o clean.csv\n    prism process -i data.csv -c config.toml --all-outputs\n    prism validate -c config.toml -i data.csv\n    prism generate --template > config.toml\n    prism process --batch files.txt -c config.toml"
 )]
 struct Cli {
-    /// Path to the raw CSV file
-    #[arg(short, long)]
-    input: String,
+    #[command(subcommand)]
+    command: Commands,
 
-    /// Path to the TOML configuration file
-    #[arg(short, long)]
-    config: String,
+    /// Enable verbose output
+    #[arg(short, long, global = true)]
+    verbose: bool,
 
-    /// Path to output the cleaned CSV
-    #[arg(short, long, default_value = "clean_data.csv")]
-    output: String,
+    /// Quiet mode (minimal output)
+    #[arg(short, long, global = true)]
+    quiet: bool,
 
-    /// Path to output summary statistics (optional)
-    #[arg(long)]
-    stats_output: Option<String>,
-
-    /// Path to output quality report (optional)
-    #[arg(long)]
-    quality_report: Option<String>,
+    /// Disable colored output
+    #[arg(long, global = true)]
+    no_color: bool,
 }
 
-// Statistics structure for aggregate calculations
-#[derive(Debug)]
-struct Stats {
-    mean: f64,
-    sd: f64,
-    min: f64,
-    max: f64,
-    n: usize,
-}
+#[derive(Subcommand)]
+enum Commands {
+    /// Process survey data (main command)
+    Process {
+        /// Path to the raw CSV file
+        #[arg(short, long)]
+        input: Option<String>,
 
-impl Stats {
-    fn calculate(values: &[f64]) -> Self {
-        let n = values.len();
-        if n == 0 {
-            return Stats {
-                mean: 0.0,
-                sd: 0.0,
-                min: 0.0,
-                max: 0.0,
-                n: 0,
-            };
-        }
+        /// Path to the TOML configuration file
+        #[arg(short, long)]
+        config: String,
 
-        let mean = values.iter().sum::<f64>() / n as f64;
-        let variance = if n > 1 {
-            values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / (n - 1) as f64
-        } else {
-            0.0
-        };
-        let sd = variance.sqrt();
-        let min = values.iter().fold(f64::INFINITY, |a, &b| a.min(b));
-        let max = values.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+        /// Path to output the cleaned CSV
+        #[arg(short, long, default_value = "clean_data.csv")]
+        output: String,
 
-        Stats {
-            mean,
-            sd,
-            min,
-            max,
-            n,
-        }
-    }
-}
+        /// Path to output summary statistics (optional)
+        #[arg(long)]
+        stats_output: Option<String>,
 
-// Quality issue tracking
-#[derive(Debug)]
-struct QualityIssue {
-    participant_id: String,
-    issue_type: String,
-    details: String,
-}
+        /// Path to output quality report (optional)
+        #[arg(long)]
+        quality_report: Option<String>,
 
-impl QualityIssue {
-    fn new(
-        participant_id: impl Into<String>,
-        issue_type: impl Into<String>,
-        details: impl Into<String>,
-    ) -> Self {
-        Self {
-            participant_id: participant_id.into(),
-            issue_type: issue_type.into(),
-            details: details.into(),
-        }
-    }
-}
+        /// Dry run - validate config and show preview without writing output
+        #[arg(long)]
+        dry_run: bool,
 
-fn validate_config(config: &SurveyConfig, headers: &[String]) -> Result<()> {
-    // Check scale definitions
-    if config.scales.is_empty() {
-        return Err(anyhow!("No scales defined in config"));
-    }
+        /// Generate all output files (stats and quality report)
+        #[arg(long)]
+        all_outputs: bool,
 
-    // Check that all scale items exist in CSV headers
-    for (scale_name, scale_def) in &config.scales {
-        if scale_def.items.is_empty() {
-            return Err(anyhow!("Scale '{}' has no items defined", scale_name));
-        }
+        /// Output format
+        #[arg(long, value_enum, default_value = "csv")]
+        format: OutputFormat,
 
-        for item in &scale_def.items {
-            if !headers.contains(item) {
-                return Err(anyhow!(
-                    "Item '{}' from scale '{}' not found in CSV headers",
-                    item,
-                    scale_name
-                ));
-            }
-        }
+        /// Path to JSON output (if --format json)
+        #[arg(long)]
+        json_output: Option<String>,
 
-        // Check reverse-scored items are subset of items
-        if let Some(reversed) = &scale_def.reverse_scored {
-            for rev_item in reversed {
-                if !scale_def.items.contains(rev_item) {
-                    return Err(anyhow!(
-                        "Reverse-scored item '{}' in scale '{}' not in items list",
-                        rev_item,
-                        scale_name
-                    ));
-                }
-            }
-        }
-    }
+        /// Process multiple files from batch list
+        #[arg(long)]
+        batch: Option<String>,
 
-    // Validate score ranges
-    if config.survey.min_score >= config.survey.max_score {
-        return Err(anyhow!(
-            "min_score ({}) must be less than max_score ({})",
-            config.survey.min_score,
-            config.survey.max_score
-        ));
-    }
+        /// Run benchmark mode
+        #[arg(long)]
+        benchmark: bool,
+    },
 
-    Ok(())
+    /// Validate configuration and CSV without processing
+    Validate {
+        /// Path to the TOML configuration file
+        #[arg(short, long)]
+        config: String,
+
+        /// Path to the CSV file to validate against
+        #[arg(short, long)]
+        input: String,
+    },
+
+    /// Generate configuration template or examples
+    Generate {
+        /// Generate a sample configuration template
+        #[arg(long)]
+        template: bool,
+    },
 }
 
 fn main() -> Result<()> {
     let args = Cli::parse();
 
+    // Initialize logger
+    let log_level = if args.verbose {
+        "debug"
+    } else if args.quiet {
+        "error"
+    } else {
+        "info"
+    };
+
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_level))
+        .format_timestamp(None)
+        .init();
+
+    match args.command {
+        Commands::Process {
+            input,
+            config,
+            output,
+            stats_output,
+            quality_report,
+            dry_run,
+            all_outputs,
+            format,
+            json_output,
+            batch,
+            benchmark,
+        } => {
+            if benchmark {
+                run_benchmark(&input, &config)?;
+            } else if let Some(batch_path) = batch {
+                process_batch(&batch_path, &config, &output, stats_output, quality_report)?;
+            } else {
+                let input = input.ok_or_else(|| anyhow::anyhow!("--input is required"))?;
+                process_file(
+                    &input,
+                    &config,
+                    &output,
+                    stats_output,
+                    quality_report,
+                    dry_run,
+                    all_outputs,
+                    format,
+                    json_output,
+                    args.quiet,
+                )?;
+            }
+        }
+        Commands::Validate { config, input } => {
+            validate_command(&config, &input)?;
+        }
+        Commands::Generate { template } => {
+            if template {
+                println!("{}", generate_config_template());
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn process_file(
+    input: &str,
+    config_path: &str,
+    output: &str,
+    stats_output: Option<String>,
+    quality_report: Option<String>,
+    dry_run: bool,
+    all_outputs: bool,
+    format: OutputFormat,
+    json_output: Option<String>,
+    quiet: bool,
+) -> Result<()> {
+    let start_time = Instant::now();
+
     // 1. Load Configuration
-    let config_content = fs::read_to_string(&args.config).context("Could not read config file")?;
-    let config: SurveyConfig =
-        toml::from_str(&config_content).context("Could not parse TOML config")?;
+    let config_content = fs::read_to_string(config_path).context(format!(
+        "Could not read config file '{}'. Check if the file exists and has .toml extension",
+        config_path
+    ))?;
+    let config: SurveyConfig = toml::from_str(&config_content).context(format!(
+        "Could not parse TOML config from '{}'. Check for syntax errors",
+        config_path
+    ))?;
 
-    println!("Processing Survey: {}", config.survey.name);
+    info!("✓ Configuration loaded successfully");
+    if !quiet {
+        println!(
+            "\n{} Processing Survey: {}",
+            if dry_run { "[DRY RUN]" } else { "▸" },
+            config.survey.name
+        );
+    }
 
-    // 2. Setup CSV Reader and Writer
-    let mut reader = csv::Reader::from_path(&args.input).context("Could not find input CSV")?;
-    let mut writer = csv::Writer::from_path(&args.output).context("Could not create output CSV")?;
+    // 2. Setup CSV Reader
+    let mut reader = csv::Reader::from_path(input).context(format!(
+        "Could not open input CSV '{}'. Check if the file exists",
+        input
+    ))?;
 
-    // Get headers to map column names to indices
-    let headers = reader.headers()?.clone();
+    info!("✓ Input CSV opened successfully");
+
+    let headers = reader.headers()?;
     let header_vec: Vec<String> = headers.iter().map(|h| h.to_string()).collect();
     let header_map: HashMap<String, usize> = header_vec
         .iter()
         .enumerate()
-        .map(|(i, name)| (name.clone(), i))
+        .map(|(i, name)| (name.to_string(), i)) // Avoid double allocation
         .collect();
+    let headers = headers.clone(); // Clone only if needed later
 
     // Validate config against CSV headers
-    validate_config(&config, &header_vec).context("Config validation failed")?;
+    validate_config(&config, &header_vec)
+        .context("Config validation failed. Check that scale items match CSV column names")?;
 
-    // Prepare Output Headers (Original + New Scales + Flags)
+    info!("✓ Configuration validated against CSV headers");
+    debug!("Found {} columns", header_vec.len());
+    debug!("Configured {} scales", config.scales.len());
+
+    // Preview in dry run mode
+    if dry_run && !quiet {
+        show_preview(&mut reader, &header_vec, &config)?;
+        return Ok(());
+    }
+
+    // Prepare output
+    let mut writer = csv::Writer::from_path(output).context(format!(
+        "Could not create output CSV '{}'. Check write permissions",
+        output
+    ))?;
+
     let mut out_headers = headers.iter().map(|h| h.to_string()).collect::<Vec<_>>();
     for scale_name in config.scales.keys() {
         out_headers.push(format!("{}_total", scale_name));
@@ -199,30 +251,68 @@ fn main() -> Result<()> {
     out_headers.push("quality_flag".to_string());
     writer.write_record(&out_headers)?;
 
+    // Determine output paths
+    let stats_path = if all_outputs {
+        Some(stats_output.unwrap_or_else(|| DEFAULT_STATS_FILE.to_string()))
+    } else {
+        stats_output
+    };
+
+    let quality_path = if all_outputs {
+        Some(quality_report.unwrap_or_else(|| DEFAULT_QUALITY_FILE.to_string()))
+    } else {
+        quality_report
+    };
+
     // 3. Process Each Participant
     let mut processed_count = 0;
+    let mut flagged_count = 0;
     let mut scale_scores: HashMap<String, Vec<f64>> = HashMap::new();
+    let mut scale_items_matrix: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
     let mut quality_issues: Vec<QualityIssue> = Vec::new();
+    let mut all_records: Vec<Vec<String>> = Vec::new();
 
-    // Initialize storage for each scale
+    // Count total records for progress bar
+    let total_records = reader.records().count();
+
+    // Initialize storage with pre-allocated capacity
     for scale_name in config.scales.keys() {
-        scale_scores.insert(scale_name.clone(), Vec::new());
+        scale_scores.insert(scale_name.clone(), Vec::with_capacity(total_records));
+        scale_items_matrix.insert(scale_name.clone(), Vec::with_capacity(total_records));
     }
+    let mut reader = csv::Reader::from_path(input)?; // Re-open after counting
+    reader.headers()?; // Skip headers
+
+    let pb = if !quiet {
+        let pb = ProgressBar::new(total_records as u64);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos}/{len} {msg}")
+                .unwrap()
+                .progress_chars("█▓▒░"),
+        );
+        Some(pb)
+    } else {
+        None
+    };
 
     for result in reader.records() {
         let record = result?;
         let mut out_record: Vec<String> = record.iter().map(|s| s.to_string()).collect();
         let mut quality_flags = Vec::new();
-        let participant_id = record.get(0).unwrap_or("Unknown").to_string();
+        let participant_id = get_participant_id(&record, &header_map, &config);
 
-        // Process each scale defined in TOML
+        debug!("Processing participant: {}", participant_id);
+
+        // Process each scale
         for (scale_name, scale_def) in &config.scales {
             let (scale_result, missing_count) =
                 process_scale(scale_def, &record, &header_map, &config)?;
 
-            // Check missing data percentage
-            check_missing_data(
+            // Quality checks
+            process_quality_checks(
                 scale_name,
+                &scale_result,
                 missing_count,
                 scale_def.items.len(),
                 &participant_id,
@@ -233,24 +323,31 @@ fn main() -> Result<()> {
 
             // Record results
             if scale_result.valid_items > 0 {
-                out_record.push(format!("{:.2}", scale_result.total));
-                out_record.push(format!("{:.2}", scale_result.mean));
+                let decimal_places = config
+                    .output
+                    .as_ref()
+                    .map(|o| o.decimal_places)
+                    .unwrap_or(2);
+
+                out_record.push(format!(
+                    "{:.prec$}",
+                    scale_result.total,
+                    prec = decimal_places
+                ));
+                out_record.push(format!(
+                    "{:.prec$}",
+                    scale_result.mean,
+                    prec = decimal_places
+                ));
+
                 scale_scores
                     .get_mut(scale_name)
                     .unwrap()
                     .push(scale_result.mean);
-
-                // Check straightlining
-                check_straightlining(
-                    scale_name,
-                    &scale_result.item_values,
-                    &participant_id,
-                    &config,
-                    &mut quality_flags,
-                    &mut quality_issues,
-                );
-
-                // Check out-of-range (already done in process_scale, but record here)
+                scale_items_matrix
+                    .get_mut(scale_name)
+                    .unwrap()
+                    .push(scale_result.item_values.clone());
             } else {
                 out_record.push("NA".to_string());
                 out_record.push("NA".to_string());
@@ -267,313 +364,275 @@ fn main() -> Result<()> {
         let flag_str = if quality_flags.is_empty() {
             QUALITY_FLAG_OK.to_string()
         } else {
+            flagged_count += 1;
             quality_flags.join(QUALITY_FLAG_SEPARATOR)
         };
         out_record.push(flag_str);
 
         writer.write_record(&out_record)?;
+        all_records.push(out_record);
         processed_count += 1;
+
+        if let Some(ref pb) = pb {
+            pb.inc(1);
+        }
+    }
+
+    if let Some(ref pb) = pb {
+        pb.finish_with_message("✓ Complete");
     }
 
     writer.flush()?;
-    println!("Successfully processed {} participants.", processed_count);
-    println!("Output saved to: {}", args.output);
 
-    // 4. Generate Summary Statistics File (if requested)
-    if let Some(stats_path) = &args.stats_output {
+    let clean_count = processed_count - flagged_count;
+    let elapsed = start_time.elapsed();
+
+    // Console output
+    if !quiet {
+        println!("\n{}", "═".repeat(50));
+        println!("✓ Processing Complete");
+        println!("{}", "═".repeat(50));
+        println!("Total Participants:  {}", processed_count);
+        println!(
+            "Clean Records:       {} ({:.1}%)",
+            clean_count,
+            (clean_count as f64 / processed_count as f64) * 100.0
+        );
+        println!(
+            "Flagged Records:     {} ({:.1}%)",
+            flagged_count,
+            (flagged_count as f64 / processed_count as f64) * 100.0
+        );
+        println!("Total Issues:        {}", quality_issues.len());
+        println!("Processing Time:     {:.2}s", elapsed.as_secs_f64());
+        println!(
+            "Throughput:          {:.0} records/sec",
+            processed_count as f64 / elapsed.as_secs_f64()
+        );
+        println!("{}", "═".repeat(50));
+
+        // Show scale summaries
+        println!("\n📊 SCALE SUMMARIES:");
+        for (scale_name, scores) in &scale_scores {
+            let stats = Stats::calculate(scores);
+            println!("  {} (n={}):", scale_name, stats.n);
+            println!(
+                "    M={:.2}, SD={:.2}, Range=[{:.2}, {:.2}]",
+                stats.mean, stats.sd, stats.min, stats.max
+            );
+        }
+        println!();
+    }
+
+    info!("Output saved to: {}", output);
+
+    // 4. Generate additional outputs
+    if let Some(stats_path) = &stats_path {
         generate_summary_stats(
             &config,
             &scale_scores,
+            &scale_items_matrix,
             processed_count,
             stats_path,
             &quality_issues,
         )?;
-        println!("Summary statistics saved to: {}", stats_path);
+        info!("Summary statistics saved to: {}", stats_path);
     }
 
-    // 5. Generate Quality Report File (if requested)
-    if let Some(quality_path) = &args.quality_report {
+    if let Some(quality_path) = &quality_path {
         generate_quality_report(&quality_issues, processed_count, quality_path)?;
-        println!("Quality report saved to: {}", quality_path);
+        info!("Quality report saved to: {}", quality_path);
     }
 
-    Ok(())
-}
-
-/// Process a single scale for a participant
-fn process_scale(
-    scale_def: &config::ScaleDefinition,
-    record: &csv::StringRecord,
-    header_map: &HashMap<String, usize>,
-    config: &SurveyConfig,
-) -> Result<(ScaleResult, usize)> {
-    let mut total_score = 0.0;
-    let mut valid_items = 0;
-    let mut item_values = Vec::new();
-    let mut missing_count = 0;
-
-    let min_score = config.survey.min_score as f64;
-    let max_score = config.survey.max_score as f64;
-    let score_range = max_score + min_score;
-
-    for item_name in &scale_def.items {
-        let idx = header_map
-            .get(item_name)
-            .ok_or_else(|| anyhow!("Item '{}' not found in CSV", item_name))?;
-
-        let val_str = &record[*idx];
-
-        if let Ok(val) = val_str.parse::<f64>() {
-            // Skip out-of-range values (but don't fail)
-            if val < min_score || val > max_score {
-                missing_count += 1;
-                continue;
-            }
-
-            // Reverse scoring if needed
-            let final_val = if scale_def
-                .reverse_scored
-                .as_ref()
-                .map_or(false, |rev| rev.contains(item_name))
-            {
-                score_range - val
-            } else {
-                val
-            };
-
-            total_score += final_val;
-            valid_items += 1;
-            item_values.push(final_val);
-        } else {
-            missing_count += 1;
+    // Export in different formats
+    match format {
+        OutputFormat::Excel => {
+            let excel_path = output.replace(".csv", ".xlsx");
+            generate_excel_output(&all_records, &out_headers, &excel_path)?;
+            info!("Excel output saved to: {}", excel_path);
         }
-    }
-
-    let mean = if valid_items > 0 {
-        total_score / valid_items as f64
-    } else {
-        0.0
-    };
-
-    Ok((
-        ScaleResult {
-            total: total_score,
-            mean,
-            valid_items,
-            item_values,
-        },
-        missing_count,
-    ))
-}
-
-/// Check for missing data issues
-fn check_missing_data(
-    scale_name: &str,
-    missing_count: usize,
-    total_items: usize,
-    participant_id: &str,
-    config: &SurveyConfig,
-    quality_flags: &mut Vec<String>,
-    quality_issues: &mut Vec<QualityIssue>,
-) {
-    let missing_percent = missing_count as f64 / total_items as f64;
-    if let Some(quality_settings) = &config.quality {
-        if missing_percent > quality_settings.max_missing_percent {
-            let issue = format!(
-                "High missing data: {} ({:.1}% missing)",
-                scale_name,
-                missing_percent * 100.0
-            );
-            quality_flags.push(issue.clone());
-            quality_issues.push(QualityIssue::new(participant_id, "MissingData", issue));
-        }
-    }
-}
-
-/// Check for straightlining
-fn check_straightlining(
-    scale_name: &str,
-    item_values: &[f64],
-    participant_id: &str,
-    config: &SurveyConfig,
-    quality_flags: &mut Vec<String>,
-    quality_issues: &mut Vec<QualityIssue>,
-) {
-    if !config
-        .quality
-        .as_ref()
-        .map_or(true, |q| q.flag_straightlining)
-    {
-        return;
-    }
-
-    if item_values.len() > 1 {
-        let first = item_values[0];
-        if item_values
-            .iter()
-            .all(|&x| (x - first).abs() < FLOAT_EPSILON)
-        {
-            let issue = format!("Straightlining: {}", scale_name);
-            quality_flags.push(issue.clone());
-            quality_issues.push(QualityIssue::new(participant_id, "Straightlining", issue));
-        }
-    }
-}
-
-fn generate_summary_stats(
-    config: &SurveyConfig,
-    scale_scores: &HashMap<String, Vec<f64>>,
-    total_participants: usize,
-    output_path: &str,
-    quality_issues: &[QualityIssue],
-) -> Result<()> {
-    use std::io::Write;
-    let mut file = fs::File::create(output_path)?;
-
-    writeln!(
-        file,
-        "{} - Summary Statistics",
-        config.survey.name.to_uppercase()
-    )?;
-    writeln!(
-        file,
-        "Generated: {}",
-        chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
-    )?;
-    writeln!(file)?;
-    writeln!(file, "Total Participants: {}", total_participants)?;
-    writeln!(
-        file,
-        "Complete Responses: {} ({:.1}%)",
-        total_participants, 100.0
-    )?;
-    writeln!(file)?;
-
-    for (scale_name, scores) in scale_scores {
-        if let Some(scale_def) = config.scales.get(scale_name) {
-            writeln!(file, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")?;
-            writeln!(file)?;
-            writeln!(
-                file,
-                "SCALE: {} ({} items)",
-                scale_name,
-                scale_def.items.len()
-            )?;
-
-            // Show items with reverse-scored markers
-            write!(file, "Items: ")?;
-            for (i, item) in scale_def.items.iter().enumerate() {
-                if i > 0 {
-                    write!(file, ", ")?;
-                }
-                if scale_def
-                    .reverse_scored
-                    .as_ref()
-                    .map_or(false, |rev| rev.contains(item))
-                {
-                    write!(file, "{}*", item)?;
-                } else {
-                    write!(file, "{}", item)?;
-                }
-            }
-            if scale_def
-                .reverse_scored
-                .as_ref()
-                .map_or(false, |rev| !rev.is_empty())
-            {
-                writeln!(file, "  (* = reverse scored)")?;
-            } else {
-                writeln!(file)?;
-            }
-            writeln!(file)?;
-
-            let stats = Stats::calculate(scores);
-            writeln!(file, "  Mean (M)              = {:.2}", stats.mean)?;
-            writeln!(file, "  Standard Deviation    = {:.2}", stats.sd)?;
-            writeln!(
-                file,
-                "  Range                 = [{:.2}, {:.2}]",
-                stats.min, stats.max
-            )?;
-            writeln!(file, "  N                     = {}", stats.n)?;
-            writeln!(file)?;
-        }
-    }
-
-    writeln!(file, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")?;
-    writeln!(file)?;
-
-    if quality_issues.is_empty() {
-        writeln!(file, "DATA QUALITY: No issues detected")?;
-    } else {
-        writeln!(
-            file,
-            "DATA QUALITY: {} issues detected (see quality report for details)",
-            quality_issues.len()
-        )?;
-    }
-
-    Ok(())
-}
-
-fn generate_quality_report(
-    quality_issues: &[QualityIssue],
-    total_participants: usize,
-    output_path: &str,
-) -> Result<()> {
-    use std::io::Write;
-    let mut file = fs::File::create(output_path)?;
-
-    writeln!(file, "DATA QUALITY REPORT")?;
-    writeln!(
-        file,
-        "Generated: {}",
-        chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
-    )?;
-    writeln!(file)?;
-    writeln!(file, "Total Participants: {}", total_participants)?;
-    writeln!(file, "Flagged Issues: {}", quality_issues.len())?;
-    writeln!(file)?;
-
-    if quality_issues.is_empty() {
-        writeln!(file, "✓ No quality issues detected. Data appears clean.")?;
-    } else {
-        writeln!(file, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")?;
-        writeln!(file)?;
-
-        // Group by issue type
-        let mut by_type: HashMap<String, Vec<&QualityIssue>> = HashMap::new();
-        for issue in quality_issues {
-            by_type
-                .entry(issue.issue_type.clone())
-                .or_insert_with(Vec::new)
-                .push(issue);
-        }
-
-        for (issue_type, issues) in &by_type {
-            writeln!(file, "{} ({} occurrences):", issue_type, issues.len())?;
-            writeln!(file)?;
-            for issue in issues {
-                writeln!(
-                    file,
-                    "  • Participant {}: {}",
-                    issue.participant_id, issue.details
+        OutputFormat::Json => {
+            if let Some(json_path) = json_output {
+                generate_json_output(
+                    &config,
+                    &scale_scores,
+                    &quality_issues,
+                    processed_count,
+                    &json_path,
                 )?;
+                info!("JSON output saved to: {}", json_path);
             }
-            writeln!(file)?;
         }
+        OutputFormat::Spss => {
+            let spss_path = output.replace(".csv", ".sps");
+            generate_spss_syntax(output, &config, &spss_path)?;
+            info!("SPSS syntax saved to: {}", spss_path);
+        }
+        OutputFormat::R => {
+            let r_path = output.replace(".csv", ".R");
+            generate_r_script(output, &config, &r_path)?;
+            info!("R script saved to: {}", r_path);
+        }
+        OutputFormat::Csv => {
+            // Already saved
+        }
+    }
 
-        writeln!(file, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")?;
-        writeln!(file)?;
-        writeln!(file, "RECOMMENDATIONS:")?;
-        writeln!(file, "• Review flagged participants manually")?;
-        writeln!(file, "• Consider excluding straightliners from analysis")?;
-        writeln!(file, "• Check out-of-range values for data entry errors")?;
-        writeln!(
+    info!("✓ All operations completed successfully");
+    Ok(())
+}
+
+fn validate_command(config_path: &str, input: &str) -> Result<()> {
+    println!("🔍 Validating configuration and data...\n");
+
+    // Load config
+    let config_content = fs::read_to_string(config_path)?;
+    let config: SurveyConfig = toml::from_str(&config_content)?;
+    println!("✓ Configuration file parsed successfully");
+
+    // Load CSV headers
+    let mut reader = csv::Reader::from_path(input)?;
+    let headers: Vec<String> = reader.headers()?.iter().map(|h| h.to_string()).collect();
+    println!("✓ CSV file opened successfully ({} columns)", headers.len());
+
+    // Validate
+    validate_config(&config, &headers)?;
+
+    println!("\n✅ Validation passed! Configuration and CSV are compatible.");
+    println!("\nConfiguration summary:");
+    println!("  Survey: {}", config.survey.name);
+    println!(
+        "  Score range: {} to {}",
+        config.survey.min_score, config.survey.max_score
+    );
+    println!("  Scales defined: {}", config.scales.len());
+    for (name, def) in &config.scales {
+        println!("    - {} ({} items)", name, def.items.len());
+    }
+
+    Ok(())
+}
+
+fn show_preview(
+    reader: &mut csv::Reader<std::fs::File>,
+    headers: &[String],
+    config: &SurveyConfig,
+) -> Result<()> {
+    println!("\n[DRY RUN] CSV Preview (first 3 rows):");
+    println!("{}", "─".repeat(80));
+    println!("{}", headers.join(" | "));
+    println!("{}", "─".repeat(80));
+
+    for (i, result) in reader.records().enumerate() {
+        if i >= 3 {
+            break;
+        }
+        let record = result?;
+        let values: Vec<&str> = record.iter().collect();
+        println!("{}", values.join(" | "));
+    }
+
+    println!("{}", "─".repeat(80));
+    println!("\nComputed columns that would be added:");
+    for scale_name in config.scales.keys() {
+        println!("  - {}_total", scale_name);
+        println!("  - {}_mean", scale_name);
+    }
+    println!("  - quality_flag");
+
+    Ok(())
+}
+
+fn process_batch(
+    batch_path: &str,
+    config_path: &str,
+    output_base: &str,
+    stats_output: Option<String>,
+    quality_report: Option<String>,
+) -> Result<()> {
+    let files = validate_batch_file(batch_path)?;
+    println!("📦 Batch processing {} files...\n", files.len());
+
+    for (i, file) in files.iter().enumerate() {
+        println!("[{}/{}] Processing: {}", i + 1, files.len(), file);
+
+        let output = output_base.replace(".csv", &format!("_{}.csv", i + 1));
+        let stats = stats_output
+            .as_ref()
+            .map(|s| s.replace(".txt", &format!("_{}.txt", i + 1)));
+        let quality = quality_report
+            .as_ref()
+            .map(|q| q.replace(".txt", &format!("_{}.txt", i + 1)));
+
+        process_file(
             file,
-            "• Assess whether missing data is random or systematic"
+            config_path,
+            &output,
+            stats,
+            quality,
+            false,
+            true,
+            OutputFormat::Csv,
+            None,
+            true, // Quiet mode for batch
         )?;
     }
+
+    println!("\n✅ Batch processing complete!");
+    Ok(())
+}
+
+fn run_benchmark(input: &Option<String>, config_path: &str) -> Result<()> {
+    let input = input
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("--input required for benchmark"))?;
+
+    println!("⚡ Running benchmark...\n");
+
+    let iterations = 5;
+    let mut times = Vec::new();
+
+    for i in 1..=iterations {
+        println!("Iteration {}/{}...", i, iterations);
+        let start = Instant::now();
+
+        process_file(
+            input,
+            config_path,
+            "benchmark_output.csv",
+            None,
+            None,
+            false,
+            false,
+            OutputFormat::Csv,
+            None,
+            true,
+        )?;
+
+        let elapsed = start.elapsed();
+        times.push(elapsed.as_secs_f64());
+    }
+
+    let avg_time = times.iter().sum::<f64>() / times.len() as f64;
+    let min_time = times.iter().fold(f64::INFINITY, |a, &b| a.min(b));
+    let max_time = times.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+
+    // Count records
+    let reader = csv::Reader::from_path(input)?;
+    let record_count = reader.into_records().count();
+
+    println!("\n📊 Benchmark Results:");
+    println!("  Records processed: {}", record_count);
+    println!("  Average time:      {:.3}s", avg_time);
+    println!("  Min time:          {:.3}s", min_time);
+    println!("  Max time:          {:.3}s", max_time);
+    println!(
+        "  Throughput:        {:.0} records/sec",
+        record_count as f64 / avg_time
+    );
+
+    // Clean up benchmark file
+    let _ = fs::remove_file("benchmark_output.csv");
 
     Ok(())
 }
