@@ -117,7 +117,7 @@ jobs:
           path: src-tauri/target/release/bundle/dmg/*.dmg
 
   release:
-    needs: [build-cli]
+    needs: [build-cli, build-gui]
     runs-on: ubuntu-latest
 
     steps:
