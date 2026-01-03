@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/artlostintime/prism/tree/main/docs
+    about: Read the full documentation and guides
+  - name: 💬 Discussions
+    url: https://github.com/artlostintime/prism/discussions
+    about: Ask questions and discuss with the community
+  - name: 🗺️ Roadmap
+    url: https://github.com/artlostintime/prism/blob/main/ROADMAP.md
+    about: View planned features and development priorities
