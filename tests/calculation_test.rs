@@ -1,6 +1,5 @@
 use assert_cmd::Command;
 use std::fs;
-use std::path::Path;
 
 #[test]
 fn test_reverse_scoring_calculation() {
