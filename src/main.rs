@@ -74,6 +74,10 @@ enum Commands {
         #[arg(long)]
         all_outputs: bool,
 
+        /// Export to all available formats (CSV, Excel, SPSS, R, JSON)
+        #[arg(long)]
+        export_all: bool,
+
         /// Output format
         #[arg(long, value_enum, default_value = "csv")]
         format: OutputFormat,
@@ -141,6 +145,7 @@ fn main() -> Result<()> {
             quality_report,
             dry_run,
             all_outputs,
+            export_all,
             format,
             json_output,
             batch,
@@ -160,6 +165,7 @@ fn main() -> Result<()> {
                     quality_report,
                     dry_run,
                     all_outputs,
+                    export_all,
                     format,
                     json_output,
                     args.quiet,
@@ -187,6 +193,7 @@ fn process_file(
     quality_report: Option<String>,
     dry_run: bool,
     all_outputs: bool,
+    export_all: bool,
     format: OutputFormat,
     json_output: Option<String>,
     quiet: bool,
@@ -451,36 +458,70 @@ fn process_file(
     }
 
     // Export in different formats
-    match format {
-        OutputFormat::Excel => {
-            let excel_path = output.replace(".csv", ".xlsx");
-            generate_excel_output(&all_records, &out_headers, &excel_path)?;
-            info!("Excel output saved to: {}", excel_path);
-        }
-        OutputFormat::Json => {
-            if let Some(json_path) = json_output {
-                generate_json_output(
-                    &config,
-                    &scale_scores,
-                    &quality_issues,
-                    processed_count,
-                    &json_path,
-                )?;
-                info!("JSON output saved to: {}", json_path);
+    if export_all {
+        // Export to all formats when --export-all flag is used
+        info!("Exporting to all formats...");
+
+        // Excel
+        let excel_path = output.replace(".csv", ".xlsx");
+        generate_excel_output(&all_records, &out_headers, &excel_path)?;
+        info!("Excel output saved to: {}", excel_path);
+
+        // JSON
+        let json_path = output.replace(".csv", ".json");
+        generate_json_output(
+            &config,
+            &scale_scores,
+            &quality_issues,
+            processed_count,
+            &json_path,
+        )?;
+        info!("JSON output saved to: {}", json_path);
+
+        // SPSS
+        let spss_path = output.replace(".csv", ".sps");
+        generate_spss_syntax(output, &config, &spss_path)?;
+        info!("SPSS syntax saved to: {}", spss_path);
+
+        // R
+        let r_path = output.replace(".csv", ".R");
+        generate_r_script(output, &config, &r_path)?;
+        info!("R script saved to: {}", r_path);
+
+        info!("✓ All formats exported successfully");
+    } else {
+        // Export in specified format only
+        match format {
+            OutputFormat::Excel => {
+                let excel_path = output.replace(".csv", ".xlsx");
+                generate_excel_output(&all_records, &out_headers, &excel_path)?;
+                info!("Excel output saved to: {}", excel_path);
             }
-        }
-        OutputFormat::Spss => {
-            let spss_path = output.replace(".csv", ".sps");
-            generate_spss_syntax(output, &config, &spss_path)?;
-            info!("SPSS syntax saved to: {}", spss_path);
-        }
-        OutputFormat::R => {
-            let r_path = output.replace(".csv", ".R");
-            generate_r_script(output, &config, &r_path)?;
-            info!("R script saved to: {}", r_path);
-        }
-        OutputFormat::Csv => {
-            // Already saved
+            OutputFormat::Json => {
+                if let Some(json_path) = json_output {
+                    generate_json_output(
+                        &config,
+                        &scale_scores,
+                        &quality_issues,
+                        processed_count,
+                        &json_path,
+                    )?;
+                    info!("JSON output saved to: {}", json_path);
+                }
+            }
+            OutputFormat::Spss => {
+                let spss_path = output.replace(".csv", ".sps");
+                generate_spss_syntax(output, &config, &spss_path)?;
+                info!("SPSS syntax saved to: {}", spss_path);
+            }
+            OutputFormat::R => {
+                let r_path = output.replace(".csv", ".R");
+                generate_r_script(output, &config, &r_path)?;
+                info!("R script saved to: {}", r_path);
+            }
+            OutputFormat::Csv => {
+                // Already saved
+            }
         }
     }
 
@@ -578,6 +619,7 @@ fn process_batch(
             quality,
             false,
             true,
+            false, // export_all not used in batch mode
             OutputFormat::Csv,
             None,
             true, // Quiet mode for batch
@@ -610,6 +652,7 @@ fn run_benchmark(input: &Option<String>, config_path: &str) -> Result<()> {
             None,
             false,
             false,
+            false, // export_all not used in benchmark
             OutputFormat::Csv,
             None,
             true,

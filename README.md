@@ -120,6 +120,26 @@ prism process -i data.csv -c config.toml -o clean.csv
 prism process -i data.csv -c config.toml -o clean.csv --all-outputs
 ```
 
+### Export to All Formats at Once 🚀
+
+```bash
+prism process -i data.csv -c config.toml -o clean.csv --export-all
+```
+
+This creates:
+
+- `clean.csv` - CSV format
+- `clean.xlsx` - Excel format
+- `clean.json` - JSON format
+- `clean.sps` - SPSS syntax file
+- `clean.R` - R script for loading data
+
+Combine with `--all-outputs` for stats and quality reports too:
+
+```bash
+prism process -i data.csv -c config.toml -o clean.csv --export-all --all-outputs
+```
+
 ### Export to Excel Instead of CSV
 
 ```bash
