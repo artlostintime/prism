@@ -559,7 +559,7 @@ Final sample (N = 142)
 
 ## Contact
 
-[Your email]
+For questions or support, please open an issue at: https://github.com/artlostintime/prism/issues
 ```
 
 ---

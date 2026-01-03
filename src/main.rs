@@ -111,6 +111,12 @@ enum Commands {
 }
 
 fn main() -> Result<()> {
+    // Detect if running without arguments (double-clicked)
+    if std::env::args().len() == 1 {
+        show_interactive_help_and_install();
+        return Ok(());
+    }
+
     let args = Cli::parse();
 
     // Initialize logger
@@ -635,4 +641,215 @@ fn run_benchmark(input: &Option<String>, config_path: &str) -> Result<()> {
     let _ = fs::remove_file("benchmark_output.csv");
 
     Ok(())
+}
+
+#[cfg(windows)]
+fn show_interactive_help_and_install() {
+    use std::io::{self, Write};
+    use std::path::PathBuf;
+
+    println!("\n");
+    println!("    ██████╗ ██████╗ ██╗███████╗███╗   ███╗");
+    println!("    ██╔══██╗██╔══██╗██║██╔════╝████╗ ████║");
+    println!("    ██████╔╝██████╔╝██║███████╗██╔████╔██║");
+    println!("    ██╔═══╝ ██╔══██╗██║╚════██║██║╚██╔╝██║");
+    println!("    ██║     ██║  ██║██║███████║██║ ╚═╝ ██║");
+    println!("    ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝     ╚═╝");
+    println!("");
+    println!("    ╔════════════════════════════════════════╗");
+    println!("    ║   Survey Data Processor (CLI) v0.2.0  ║");
+    println!("    ║   Psychology Research Made Simple     ║");
+    println!("    ╚════════════════════════════════════════╝");
+    println!("");
+
+    // Define installation directory
+    let install_dir = std::env::var("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from(std::env::var("USERPROFILE").unwrap_or_default()))
+        .join("Programs")
+        .join("Prism");
+
+    let install_path = install_dir.join("prism.exe");
+
+    // Check if already installed in the target location
+    let current_exe = std::env::current_exe().ok();
+    let is_installed = current_exe
+        .as_ref()
+        .map(|p| p == &install_path)
+        .unwrap_or(false);
+
+    // Check if install directory is in PATH
+    let is_in_path = std::env::var("PATH")
+        .unwrap_or_default()
+        .split(';')
+        .any(|p| p == install_dir.to_str().unwrap_or(""));
+
+    if !is_installed || !is_in_path {
+        println!("    ⚠️  Prism is not installed.");
+        println!("");
+        println!("    📦 Installation will:");
+        println!("       • Copy prism.exe to: {}", install_dir.display());
+        println!("       • Add to PATH for global access");
+        println!("       • Allow you to delete the downloaded file");
+        println!("");
+        print!("    Would you like to install now? (Y/n): ");
+        io::stdout().flush().unwrap();
+
+        let mut response = String::new();
+        io::stdin().read_line(&mut response).ok();
+        let response = response.trim().to_lowercase();
+
+        if response.is_empty() || response == "y" || response == "yes" {
+            // Create installation directory
+            match fs::create_dir_all(&install_dir) {
+                Ok(_) => {
+                    // Copy executable
+                    if let Some(current) = current_exe {
+                        match fs::copy(&current, &install_path) {
+                            Ok(_) => {
+                                println!("");
+                                println!("    ✅ Copied to: {}", install_path.display());
+
+                                // Add to PATH
+                                match add_to_path(install_dir.to_str().unwrap()) {
+                                    Ok(_) => {
+                                        println!("    ✅ Added to PATH!");
+                                        println!(
+                                            "    🔄 Please restart your terminal/command prompt."
+                                        );
+                                        println!("       Then you can use 'prism' from anywhere!");
+                                        println!("");
+                                        println!(
+                                            "    💡 You can now safely delete the downloaded file."
+                                        );
+                                        println!("");
+                                    }
+                                    Err(e) => {
+                                        println!("    ⚠️  Warning: Failed to add to PATH: {}", e);
+                                        println!(
+                                            "    You can still run: {}",
+                                            install_path.display()
+                                        );
+                                        println!("");
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("");
+                                println!("    ❌ Failed to copy file: {}", e);
+                                println!("       Try running as administrator.");
+                                println!("");
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("");
+                    println!("    ❌ Failed to create directory: {}", e);
+                    println!("       Try running as administrator.");
+                    println!("");
+                }
+            }
+        } else {
+            println!("");
+            println!("    Installation skipped.");
+            println!("    You can run prism using the full path:");
+            if let Some(exe_path) = current_exe {
+                println!("    {}", exe_path.display());
+            }
+            println!("");
+        }
+    } else {
+        println!("    ✅ Prism is already installed!");
+        println!("    📍 Location: {}", install_path.display());
+        println!("");
+    }
+
+    println!("    ┌─────────────────────────────────────────────────────────┐");
+    println!("    │  📖  COMMON COMMANDS                                    │");
+    println!("    └─────────────────────────────────────────────────────────┘");
+    println!("");
+    println!("    ▸ Process data:");
+    println!("      prism process -i data.csv -c config.toml -o clean.csv");
+    println!("");
+    println!("    ▸ Validate config:");
+    println!("      prism validate -c config.toml -i data.csv");
+    println!("");
+    println!("    ▸ Generate template:");
+    println!("      prism generate --template > config.toml");
+    println!("");
+    println!("    ▸ Show all options:");
+    println!("      prism --help");
+    println!("");
+    println!("    ┌─────────────────────────────────────────────────────────┐");
+    println!("    │  💡 TIP: For a graphical interface, use the GUI app    │");
+    println!("    └─────────────────────────────────────────────────────────┘");
+    println!("");
+
+    print!("Press Enter to exit...");
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).ok();
+}
+
+#[cfg(windows)]
+fn add_to_path(dir: &str) -> Result<()> {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let env = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
+
+    let current_path: String = env.get_value("Path").unwrap_or_default();
+
+    // Check if already in PATH
+    if current_path.split(';').any(|p| p == dir) {
+        return Ok(());
+    }
+
+    let new_path = if current_path.is_empty() {
+        dir.to_string()
+    } else if current_path.ends_with(';') {
+        format!("{}{}", current_path, dir)
+    } else {
+        format!("{};{}", current_path, dir)
+    };
+
+    env.set_value("Path", &new_path)?;
+
+    // Broadcast WM_SETTINGCHANGE to notify system
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn show_interactive_help_and_install() {
+    use std::io::{self, Write};
+
+    println!("\n╔══════════════════════════════════════════════════════════════╗");
+    println!("║                                                              ║");
+    println!("║          🔍 PRISM - Survey Data Processor (CLI)             ║");
+    println!("║                                                              ║");
+    println!("╚══════════════════════════════════════════════════════════════╝\n");
+
+    println!("📦 INSTALLATION:\n");
+    println!("  To install globally, run:");
+    println!("    cargo install --path .\n");
+    println!("  Or use the install script:");
+    println!("    ./install-cli.sh\n");
+
+    println!("📖 COMMON COMMANDS:\n");
+    println!("  Process data:");
+    println!("    prism process -i data.csv -c config.toml -o clean.csv\n");
+    println!("  Validate config:");
+    println!("    prism validate -c config.toml -i data.csv\n");
+    println!("  Generate template:");
+    println!("    prism generate --template > config.toml\n");
+    println!("  Show all options:");
+    println!("    prism --help\n");
+    println!("💡 TIP: For a graphical interface, use the GUI version instead.\n");
+
+    print!("Press Enter to exit...");
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).ok();
 }
