@@ -34,7 +34,8 @@ fn test_straightlining_detection_all_same() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -91,7 +92,8 @@ fn test_no_straightlining_with_variation() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -150,7 +152,8 @@ fn test_missing_data_percentage_high() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -209,7 +212,8 @@ fn test_out_of_range_detection() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -271,7 +275,8 @@ fn test_multiple_quality_issues() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)

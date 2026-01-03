@@ -32,7 +32,8 @@ fn test_invalid_config_missing_items() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -80,7 +81,8 @@ fn test_invalid_config_reverse_item_not_in_list() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -127,7 +129,8 @@ fn test_invalid_config_min_greater_than_max() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -178,7 +181,8 @@ fn test_valid_config_with_all_options() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)

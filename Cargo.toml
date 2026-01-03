@@ -1,13 +1,22 @@
 [package]
 name = "prism"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "Psychology survey data processing pipeline - Automated scoring, quality checks, and statistical reporting"
+description = "Psychology survey data processing - Automated scoring, quality checks, and statistical reporting with Cronbach's alpha"
 authors = ["Shuvi"]
 license = "MIT"
 repository = "https://github.com/artlostintime/prism"
+documentation = "https://github.com/artlostintime/prism/tree/main/docs"
+readme = "README.md"
 keywords = ["psychology", "survey", "psychometrics", "research", "data-processing"]
 categories = ["command-line-utilities", "science"]
+exclude = [
+    "target/",
+    "src-tauri/target/",
+    "data/",
+    ".git/",
+    ".github/",
+]
 
 [dependencies]
 anyhow = "1.0.100"

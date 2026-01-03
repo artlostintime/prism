@@ -3,109 +3,1449 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prism</title>
+    <title>Prism - Psychology Data Processor</title>
     <style>
+      :root {
+        --primary: #667eea;
+        --primary-dark: #5568d3;
+        --secondary: #764ba2;
+        --success: #48bb78;
+        --error: #f56565;
+        --warning: #ed8936;
+        --info: #4299e1;
+        --bg-light: #f7fafc;
+        --bg-dark: #2d3748;
+        --text: #2d3748;
+        --text-light: #718096;
+        --border: #e2e8f0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: "Segoe UI", sans-serif;
-        background-color: #f3f3f3;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
         margin: 0;
+        padding: 20px;
       }
-      .card {
+
+      .container {
         background: white;
         padding: 2.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        text-align: center;
-        width: 350px;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        max-width: 700px;
+        animation: slideIn 0.3s ease-out;
       }
-      h1 {
-        color: #333;
-        margin-top: 0;
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
-      p {
-        color: #666;
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 2rem;
       }
 
-      button {
-        background-color: #0078d4;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 600;
-        transition: background 0.2s;
-        width: 100%;
-      }
-      button:hover {
-        background-color: #005a9e;
+      h1 {
+        color: var(--text);
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
 
-      #status {
-        margin-top: 20px;
+      .subtitle {
+        color: var(--text-light);
+        margin: 0.25rem 0 0 0;
         font-size: 0.9rem;
-        word-break: break-all; /* Ensures long paths don't break layout */
+      }
+
+      .help-btn {
+        background: var(--bg-light);
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .help-btn:hover {
+        background: var(--border);
+        transform: scale(1.1);
+      }
+
+      /* Sections */
+      .section {
+        margin-bottom: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .section-label {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .tooltip {
+        position: relative;
+        cursor: help;
+        opacity: 0.6;
+      }
+
+      .tooltip:hover {
+        opacity: 1;
+      }
+
+      .tooltip-text {
+        visibility: hidden;
+        background: var(--bg-dark);
+        color: white;
+        text-align: left;
+        padding: 0.75rem;
+        border-radius: 6px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 250px;
+        font-size: 0.85rem;
+        font-weight: normal;
+        line-height: 1.4;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .tooltip:hover .tooltip-text {
+        visibility: visible;
+        animation: tooltipFade 0.2s ease-in;
+      }
+
+      @keyframes tooltipFade {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+
+      /* Drop zones */
+      .drop-zone {
+        border: 2px dashed var(--border);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        background: var(--bg-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .drop-zone:hover:not(.file-selected) {
+        border-color: var(--primary);
+        background: #edf2f7;
+        transform: translateY(-2px);
+      }
+
+      .drop-zone.drag-over {
+        border-color: var(--primary);
+        background: #e6f2ff;
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      }
+
+      .drop-zone-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .drop-zone-text {
+        color: var(--text-light);
+        font-size: 0.95rem;
+      }
+
+      .file-selected {
+        background: #f0fdf4;
+        border-color: var(--success);
+        padding: 1.25rem;
+        cursor: default;
+      }
+
+      .file-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .file-name {
+        color: var(--text);
+        font-weight: 500;
+        word-break: break-all;
+        font-size: 0.9rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+      }
+
+      .file-stats {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        font-size: 0.85rem;
+        color: var(--text-light);
+      }
+
+      .file-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      /* Config section */
+      .config-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .btn-secondary {
+        background: var(--bg-light);
+        color: var(--text);
+        border: 2px solid var(--border);
+        padding: 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .btn-secondary:hover {
+        background: white;
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+      }
+
+      .btn-secondary.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .config-editor {
+        display: none;
+        margin-top: 1rem;
+      }
+
+      .config-editor.active {
+        display: block;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .editor-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .btn-small {
+        background: white;
+        border: 1px solid var(--border);
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+      }
+
+      .btn-small:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 320px;
+        padding: 1rem;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-family: "Consolas", "Monaco", "Courier New", monospace;
+        font-size: 0.85rem;
+        resize: vertical;
+        line-height: 1.6;
+        background: #fafafa;
+        transition: border-color 0.2s;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+      }
+
+      .config-validation {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        display: none;
+      }
+
+      .config-validation.show {
+        display: block;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .config-validation.valid {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid var(--success);
+      }
+
+      .config-validation.invalid {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid var(--error);
+      }
+
+      /* Output section */
+      .output-display {
+        background: var(--bg-light);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 2px solid var(--border);
+        font-family: "Consolas", "Monaco", "Courier New", monospace;
+        font-size: 0.85rem;
+        color: var(--text-light);
+        word-break: break-all;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .output-display.ready {
+        border-color: var(--success);
+        background: #f0fdf4;
+        color: var(--text);
+      }
+
+      .btn-icon {
+        background: white;
+        border: 1px solid var(--border);
+        padding: 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+
+      .btn-icon:hover {
+        border-color: var(--primary);
+        transform: scale(1.1);
+      }
+
+      .btn-icon:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* Primary button */
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
+        color: white;
+        border: none;
+        padding: 1.1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.05rem;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 1.5rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-primary.processing {
+        background: var(--info);
+      }
+
+      /* Progress bar */
+      .progress-container {
+        display: none;
+        margin-top: 1rem;
+      }
+
+      .progress-container.show {
+        display: block;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          opacity: 0.7;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.7;
+        }
+      }
+
+      .progress-text {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        text-align: center;
+      }
+
+      /* Status display */
+      #status {
+        margin-top: 1.5rem;
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        display: none;
+        white-space: pre-line;
+        word-break: break-word;
+        border: 2px solid transparent;
+      }
+
+      #status.show {
+        display: block;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      #status.success {
+        background: #f0fdf4;
+        color: #166534;
+        border-color: var(--success);
+      }
+
+      #status.error {
+        background: #fef2f2;
+        color: #991b1b;
+        border-color: var(--error);
+      }
+
+      #status.processing {
+        background: #eff6ff;
+        color: #1e40af;
+        border-color: var(--info);
+      }
+
+      .status-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .btn-status {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid currentColor;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .btn-status:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Spinner */
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 0.6s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Keyboard shortcuts hint */
+      .shortcuts {
+        margin-top: 1.5rem;
+        padding: 0.75rem;
+        background: var(--bg-light);
+        border-radius: 6px;
+        font-size: 0.8rem;
+        color: var(--text-light);
+        text-align: center;
+      }
+
+      .kbd {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 0.15rem 0.4rem;
+        font-family: monospace;
+        font-size: 0.75rem;
+      }
+
+      /* Examples modal */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        animation: fadeIn 0.2s ease-out;
+      }
+
+      .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-light);
+        transition: color 0.2s;
+      }
+
+      .modal-close:hover {
+        color: var(--text);
+      }
+
+      .example-item {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--bg-light);
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .example-item:hover {
+        border-color: var(--primary);
+        transform: translateX(4px);
+      }
+
+      .example-title {
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+      }
+
+      .example-desc {
+        font-size: 0.85rem;
+        color: var(--text-light);
       }
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>Prism</h1>
-      <p>Psychology Research Pipeline</p>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div>
+          <h1>🔬 Prism</h1>
+          <p class="subtitle">Psychology Survey Data Processor</p>
+        </div>
+        <button class="help-btn" onclick="showHelp()" title="Help & Examples">
+          ❓
+        </button>
+      </div>
 
-      <button onclick="selectFile()">📂 Select CSV File</button>
+      <!-- CSV File Section -->
+      <div class="section">
+        <div class="section-header">
+          <label class="section-label">
+            <span>1️⃣ CSV Data File</span>
+            <span class="tooltip">
+              ⓘ
+              <span class="tooltip-text">
+                Select your raw survey data CSV file. The first row should
+                contain column headers matching your config.
+              </span>
+            </span>
+          </label>
+        </div>
+        <div id="csvDropZone" class="drop-zone">
+          <div class="drop-zone-icon">📊</div>
+          <div class="drop-zone-text">
+            Drop CSV file here or click to browse
+          </div>
+        </div>
+      </div>
 
-      <div id="status">Ready.</div>
+      <!-- Config Section -->
+      <div class="section">
+        <div class="section-header">
+          <label class="section-label">
+            <span>2️⃣ Configuration</span>
+            <span class="tooltip">
+              ⓘ
+              <span class="tooltip-text">
+                Define your survey scales, reverse-scored items, and quality
+                thresholds. Use an existing file or create a new one.
+              </span>
+            </span>
+          </label>
+        </div>
+        <div class="config-options">
+          <button class="btn-secondary" onclick="useExistingConfig()">
+            📂 Existing
+          </button>
+          <button class="btn-secondary" onclick="toggleConfigEditor()">
+            ✏️ Edit
+          </button>
+          <button class="btn-secondary" onclick="showExamples()">
+            📝 Examples
+          </button>
+        </div>
+
+        <div id="configEditor" class="config-editor">
+          <div class="editor-header">
+            <span style="font-size: 0.85rem; color: var(--text-light)">
+              Edit your configuration below:
+            </span>
+            <div class="editor-actions">
+              <button class="btn-small" onclick="validateConfig()">
+                ✓ Validate
+              </button>
+              <button class="btn-small" onclick="clearConfig()">
+                🗑️ Clear
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="configTextarea"
+            spellcheck="false"
+            placeholder="Paste or edit your TOML configuration here..."
+          ></textarea>
+          <div id="configValidation" class="config-validation"></div>
+        </div>
+
+        <div
+          id="configStatus"
+          style="
+            display: none;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--success);
+            font-weight: 500;
+          "
+        >
+          ✓ Config ready
+        </div>
+      </div>
+
+      <!-- Output Location Section -->
+      <div class="section">
+        <div class="section-header">
+          <label class="section-label">
+            <span>3️⃣ Output Location</span>
+            <span class="tooltip">
+              ⓘ
+              <span class="tooltip-text">
+                Processed files will be saved here. By default, creates a
+                "processed" folder next to your CSV file.
+              </span>
+            </span>
+          </label>
+        </div>
+        <div id="outputLocation" class="output-display">
+          <span>Will be determined from CSV location...</span>
+          <button
+            id="openFolderBtn"
+            class="btn-icon"
+            onclick="openOutputFolder()"
+            disabled
+            title="Open output folder"
+          >
+            📁
+          </button>
+        </div>
+      </div>
+
+      <!-- Process Button -->
+      <button
+        id="processBtn"
+        class="btn-primary"
+        onclick="processData()"
+        disabled
+      >
+        <span>▶</span> Process Data
+      </button>
+
+      <!-- Progress Bar -->
+      <div id="progressContainer" class="progress-container">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <div id="progressText" class="progress-text">Initializing...</div>
+      </div>
+
+      <!-- Status Display -->
+      <div id="status"></div>
+
+      <!-- Keyboard Shortcuts -->
+      <div class="shortcuts">
+        💡 <span class="kbd">Ctrl</span> + <span class="kbd">O</span> Open CSV •
+        <span class="kbd">Ctrl</span> + <span class="kbd">K</span> Open Config •
+        <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> Process
+      </div>
+    </div>
+
+    <!-- Examples Modal -->
+    <div id="examplesModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 style="margin: 0">📝 Configuration Examples</h2>
+          <button class="modal-close" onclick="closeExamples()">×</button>
+        </div>
+
+        <div class="example-item" onclick="loadExample('basic')">
+          <div class="example-title">Basic Survey</div>
+          <div class="example-desc">
+            Simple survey with one scale and no reverse scoring
+          </div>
+        </div>
+
+        <div class="example-item" onclick="loadExample('burnout')">
+          <div class="example-title">Burnout Inventory</div>
+          <div class="example-desc">
+            Multiple scales measuring emotional exhaustion and depersonalization
+          </div>
+        </div>
+
+        <div class="example-item" onclick="loadExample('alliance')">
+          <div class="example-title">Working Alliance</div>
+          <div class="example-desc">Scale with reverse-scored items</div>
+        </div>
+
+        <div class="example-item" onclick="loadExample('complex')">
+          <div class="example-title">Complex Study</div>
+          <div class="example-desc">
+            Multiple scales with various configurations
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-      async function selectFile() {
-        const statusLabel = document.getElementById("status");
-        const btn = document.querySelector("button");
+      // Check Tauri API
+      if (!window.__TAURI__) {
+        document.body.innerHTML = `
+          <div class="container">
+            <h1>⚠️ Error</h1>
+            <p style="color: var(--error);">Tauri API not available. Please run through Tauri.</p>
+            <p style="font-size: 0.85rem; color: var(--text-light);">
+              Run: <code style="background: var(--bg-light); padding: 0.25rem 0.5rem; border-radius: 4px;">cargo tauri dev</code>
+            </p>
+          </div>
+        `;
+        throw new Error("Tauri API not loaded");
+      }
 
-        statusLabel.style.color = "#666";
-        statusLabel.innerText = "Opening file picker...";
+      // State
+      let csvFilePath = null;
+      let configFilePath = null;
+      let configText = null;
+      let isEditingConfig = false;
+      let fileSelected = false;
+      let outputPath = null;
+      let csvRowCount = 0;
+      let csvColCount = 0;
+
+      // Initialize
+      async function init() {
+        await initConfigTemplate();
+        setupKeyboardShortcuts();
+      }
+
+      // Load default config template
+      async function initConfigTemplate() {
+        try {
+          const template = await window.__TAURI__.core.invoke(
+            "generate_config_template"
+          );
+          document.getElementById("configTextarea").value = template;
+          configText = template;
+        } catch (error) {
+          console.error("Failed to load template:", error);
+        }
+      }
+
+      // Keyboard shortcuts
+      function setupKeyboardShortcuts() {
+        document.addEventListener("keydown", async (e) => {
+          if (e.ctrlKey && e.key === "o") {
+            e.preventDefault();
+            document.getElementById("csvDropZone").click();
+          } else if (e.ctrlKey && e.key === "k") {
+            e.preventDefault();
+            useExistingConfig();
+          } else if (e.ctrlKey && e.key === "Enter") {
+            e.preventDefault();
+            if (!document.getElementById("processBtn").disabled) {
+              processData();
+            }
+          }
+        });
+      }
+
+      // CSV Drop Zone
+      const csvDropZone = document.getElementById("csvDropZone");
+
+      csvDropZone.addEventListener("click", async (e) => {
+        if (e.target.tagName === "BUTTON" || fileSelected) {
+          return;
+        }
 
         try {
-          // 1. Pick the file
           const filePath = await window.__TAURI__.core.invoke("pick_file");
+          if (filePath) {
+            fileSelected = true;
+            await handleCSVSelected(filePath);
+          }
+        } catch (error) {
+          console.error("Error picking file:", error);
+          showStatus("Failed to open file picker: " + error, "error");
+        }
+      });
 
-          if (!filePath) {
-            statusLabel.innerText = "Selection cancelled.";
+      csvDropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        csvDropZone.classList.add("drag-over");
+      });
+
+      csvDropZone.addEventListener("dragleave", () => {
+        csvDropZone.classList.remove("drag-over");
+      });
+
+      csvDropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        csvDropZone.classList.remove("drag-over");
+        showStatus(
+          "Drag-drop from file system not yet supported. Please use the file picker.",
+          "error"
+        );
+      });
+
+      async function handleCSVSelected(filePath) {
+        csvFilePath = filePath;
+
+        // Get CSV info
+        try {
+          const infoJson = await window.__TAURI__.core.invoke("get_csv_info", {
+            path: filePath,
+          });
+          const info = JSON.parse(infoJson);
+          csvRowCount = info.rows;
+          csvColCount = info.columns;
+        } catch (error) {
+          console.error("Error getting CSV info:", error);
+          csvRowCount = 0;
+          csvColCount = 0;
+        }
+
+        // Update UI
+        csvDropZone.classList.add("file-selected");
+        csvDropZone.style.cursor = "default";
+
+        const fileName = filePath.split(/[\\/]/).pop();
+        const stats =
+          csvRowCount > 0
+            ? `<div class="file-stats">
+               <div class="file-stat">📊 ${csvRowCount} rows</div>
+               <div class="file-stat">📋 ${csvColCount} columns</div>
+             </div>`
+            : "";
+
+        csvDropZone.innerHTML = `
+          <div class="drop-zone-icon">✅</div>
+          <div class="drop-zone-text">CSV file selected</div>
+          <div class="file-info">
+            <div class="file-name">${fileName}</div>
+            ${stats}
+          </div>
+          <div style="margin-top: 1rem;">
+            <button onclick="event.stopPropagation(); resetCSVSelection()" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;">
+              🔄 Choose Different File
+            </button>
+          </div>
+        `;
+
+        updateOutputLocation(filePath);
+        updateProcessButton();
+      }
+
+      function resetCSVSelection() {
+        csvFilePath = null;
+        fileSelected = false;
+        csvRowCount = 0;
+        csvColCount = 0;
+        csvDropZone.classList.remove("file-selected");
+        csvDropZone.style.cursor = "pointer";
+        csvDropZone.innerHTML = `
+          <div class="drop-zone-icon">📊</div>
+          <div class="drop-zone-text">Drop CSV file here or click to browse</div>
+        `;
+
+        const outputDisplay = document.getElementById("outputLocation");
+        outputDisplay.className = "output-display";
+        outputDisplay.innerHTML = `
+          <span>Will be determined from CSV location...</span>
+          <button id="openFolderBtn" class="btn-icon" onclick="openOutputFolder()" disabled title="Open output folder">📁</button>
+        `;
+
+        updateProcessButton();
+      }
+
+      function updateOutputLocation(csvPath) {
+        const parts = csvPath.split(/[\\/]/);
+        const parentFolder = parts[parts.length - 2] || "";
+
+        let outputLocation;
+        if (
+          ["raw_data", "raw", "data", "input"].includes(
+            parentFolder.toLowerCase()
+          )
+        ) {
+          const parentIndex = parts.length - 2;
+          outputLocation =
+            parts.slice(0, parentIndex).join("\\") + "\\processed\\";
+        } else {
+          outputLocation = parts.slice(0, -1).join("\\") + "\\processed\\";
+        }
+
+        outputPath = outputLocation;
+        const outputDisplay = document.getElementById("outputLocation");
+        outputDisplay.className = "output-display ready";
+        outputDisplay.innerHTML = `
+          <span>${outputLocation}</span>
+          <button id="openFolderBtn" class="btn-icon" onclick="openOutputFolder()" disabled title="Open output folder">📁</button>
+        `;
+      }
+
+      // Config functions
+      async function useExistingConfig() {
+        try {
+          const filePath = await window.__TAURI__.core.invoke("pick_config");
+          if (filePath) {
+            configFilePath = filePath;
+            isEditingConfig = false;
+
+            // Clear active state from all buttons
+            document
+              .querySelectorAll(".config-options .btn-secondary")
+              .forEach((btn) => {
+                btn.classList.remove("active");
+              });
+            document
+              .querySelectorAll(".config-options .btn-secondary")[0]
+              .classList.add("active");
+
+            document.getElementById("configEditor").classList.remove("active");
+            document.getElementById("configStatus").style.display = "block";
+            document.getElementById(
+              "configStatus"
+            ).innerHTML = `✓ Using: ${filePath.split(/[\\/]/).pop()}`;
+
+            updateProcessButton();
+          }
+        } catch (error) {
+          console.error("Error picking config:", error);
+          showStatus("Failed to open config picker: " + error, "error");
+        }
+      }
+
+      function toggleConfigEditor() {
+        isEditingConfig = !isEditingConfig;
+        const editor = document.getElementById("configEditor");
+        const status = document.getElementById("configStatus");
+
+        // Update button states
+        document
+          .querySelectorAll(".config-options .btn-secondary")
+          .forEach((btn) => {
+            btn.classList.remove("active");
+          });
+
+        if (isEditingConfig) {
+          document
+            .querySelectorAll(".config-options .btn-secondary")[1]
+            .classList.add("active");
+          editor.classList.add("active");
+          status.style.display = "block";
+          status.innerHTML = "✏️ Editing custom configuration";
+          configFilePath = null;
+        } else {
+          editor.classList.remove("active");
+          status.style.display = "none";
+        }
+
+        updateProcessButton();
+      }
+
+      async function validateConfig() {
+        const configContent = document.getElementById("configTextarea").value;
+        const validationDiv = document.getElementById("configValidation");
+
+        if (!configContent.trim()) {
+          validationDiv.className = "config-validation show invalid";
+          validationDiv.textContent = "❌ Config is empty";
+          return;
+        }
+
+        try {
+          // Simple TOML validation (basic check)
+          if (
+            !configContent.includes("[survey]") ||
+            !configContent.includes("[scales")
+          ) {
+            validationDiv.className = "config-validation show invalid";
+            validationDiv.textContent =
+              "❌ Missing required sections: [survey] and [scales]";
             return;
           }
 
-          // 2. File picked! Now Run Analysis automatically
-          statusLabel.style.color = "#0078d4"; // Blue
-          statusLabel.innerText = "Processing: " + filePath;
-          btn.disabled = true; // Disable button while working
+          validationDiv.className = "config-validation show valid";
+          validationDiv.textContent = "✅ Configuration looks good!";
 
-          // 3. Call the Engine
-          const result = await window.__TAURI__.core.invoke("run_analysis", {
-            inputPath: filePath,
-          });
-
-          // 4. Show Result
-          if (result.includes("Success")) {
-            statusLabel.style.color = "#28a745"; // Green
-          } else {
-            statusLabel.style.color = "#d9534f"; // Red
-          }
-          statusLabel.innerText = result;
+          setTimeout(() => {
+            validationDiv.classList.remove("show");
+          }, 3000);
         } catch (error) {
-          console.error(error);
-          statusLabel.style.color = "#d9534f"; // Red
-          statusLabel.innerText = "System Error: " + error;
-        } finally {
-          btn.disabled = false;
+          validationDiv.className = "config-validation show invalid";
+          validationDiv.textContent = "❌ " + error;
         }
       }
+
+      function clearConfig() {
+        if (confirm("Clear the configuration editor?")) {
+          document.getElementById("configTextarea").value = "";
+          document.getElementById("configValidation").classList.remove("show");
+        }
+      }
+
+      function updateProcessButton() {
+        const btn = document.getElementById("processBtn");
+        const hasCSV = csvFilePath !== null;
+        const hasConfig = configFilePath !== null || isEditingConfig;
+
+        btn.disabled = !(hasCSV && hasConfig);
+      }
+
+      // Process data
+      async function processData() {
+        const btn = document.getElementById("processBtn");
+        const progressContainer = document.getElementById("progressContainer");
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
+
+        btn.disabled = true;
+        btn.classList.add("processing");
+        btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+        progressContainer.classList.add("show");
+        progressFill.style.width = "10%";
+        progressText.textContent = "Preparing...";
+
+        showStatus("", "processing");
+
+        try {
+          let configToUse = configFilePath;
+
+          // If editing config, save it first
+          if (isEditingConfig) {
+            progressText.textContent = "Saving configuration...";
+            progressFill.style.width = "20%";
+
+            const configContent =
+              document.getElementById("configTextarea").value;
+            try {
+              configToUse = await window.__TAURI__.core.invoke(
+                "save_config_text",
+                {
+                  configText: configContent,
+                  csvPath: csvFilePath,
+                }
+              );
+            } catch (error) {
+              showStatus("Failed to save config: " + error, "error");
+              resetProcessButton();
+              return;
+            }
+          }
+
+          progressText.textContent = "Processing data...";
+          progressFill.style.width = "50%";
+
+          const result = await window.__TAURI__.core.invoke("run_analysis", {
+            inputPath: csvFilePath,
+            configPath: configToUse,
+          });
+
+          progressFill.style.width = "100%";
+          progressText.textContent = "Complete!";
+
+          if (result.includes("Success") || result.includes("✅")) {
+            showStatus(result, "success");
+
+            // Enable open folder button
+            const openBtn = document.getElementById("openFolderBtn");
+            if (openBtn) {
+              openBtn.disabled = false;
+            }
+
+            // Add action buttons
+            setTimeout(() => {
+              const statusDiv = document.getElementById("status");
+              if (statusDiv && !statusDiv.querySelector(".status-actions")) {
+                const actions = document.createElement("div");
+                actions.className = "status-actions";
+                actions.innerHTML = `
+                  <button class="btn-status" onclick="openOutputFolder()" style="color: var(--success); font-weight: 600;">
+                    📂 Open Output Folder
+                  </button>
+                  <button class="btn-status" onclick="resetForNewAnalysis()" style="color: var(--primary);">
+                    🔄 Process Another File
+                  </button>
+                `;
+                statusDiv.appendChild(actions);
+              }
+            }, 100);
+          } else {
+            showStatus(result, "error");
+          }
+        } catch (error) {
+          console.error(error);
+          progressFill.style.width = "100%";
+          progressText.textContent = "Error occurred";
+          showStatus("System Error: " + error, "error");
+        } finally {
+          setTimeout(() => {
+            progressContainer.classList.remove("show");
+            progressFill.style.width = "0%";
+          }, 2000);
+
+          resetProcessButton();
+        }
+      }
+
+      function resetProcessButton() {
+        const btn = document.getElementById("processBtn");
+        btn.classList.remove("processing");
+        btn.innerHTML = "<span>▶</span> Process Data";
+        updateProcessButton();
+      }
+
+      function resetForNewAnalysis() {
+        resetCSVSelection();
+        document.getElementById("status").classList.remove("show");
+        document.getElementById("configStatus").style.display = "none";
+        document.getElementById("configEditor").classList.remove("active");
+        document
+          .querySelectorAll(".config-options .btn-secondary")
+          .forEach((btn) => {
+            btn.classList.remove("active");
+          });
+        isEditingConfig = false;
+        configFilePath = null;
+      }
+
+      // Open output folder
+      async function openOutputFolder() {
+        if (!outputPath) return;
+
+        try {
+          await window.__TAURI__.core.invoke("open_folder", {
+            path: outputPath,
+          });
+        } catch (error) {
+          console.error("Error opening folder:", error);
+          showStatus("Could not open folder: " + error, "error");
+        }
+      }
+
+      // Status display
+      function showStatus(message, type) {
+        const statusEl = document.getElementById("status");
+        statusEl.className = "show " + type;
+        statusEl.innerHTML = message;
+      }
+
+      // Examples
+      function showExamples() {
+        document.getElementById("examplesModal").classList.add("show");
+      }
+
+      function closeExamples() {
+        document.getElementById("examplesModal").classList.remove("show");
+      }
+
+      function loadExample(type) {
+        const examples = {
+          basic: `[survey]
+name = "Basic Survey"
+min_score = 1
+max_score = 5
+
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+
+[scales.satisfaction]
+items = ["Q1", "Q2", "Q3", "Q4", "Q5"]
+reverse_scored = []`,
+
+          burnout: `[survey]
+name = "Maslach Burnout Inventory"
+min_score = 1
+max_score = 7
+
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+
+[scales.emotional_exhaustion]
+items = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]
+reverse_scored = []
+
+[scales.depersonalization]
+items = ["Q10", "Q11", "Q12", "Q13", "Q14"]
+reverse_scored = []
+
+[scales.personal_accomplishment]
+items = ["Q15", "Q16", "Q17", "Q18", "Q19", "Q20", "Q21", "Q22"]
+reverse_scored = []`,
+
+          alliance: `[survey]
+name = "Working Alliance Inventory"
+min_score = 1
+max_score = 7
+
+[quality]
+max_missing_percent = 0.15
+flag_straightlining = true
+
+[scales.alliance_total]
+items = ["WAI_1", "WAI_2", "WAI_3", "WAI_4", "WAI_5", "WAI_6", "WAI_7", "WAI_8", "WAI_9", "WAI_10", "WAI_11", "WAI_12"]
+reverse_scored = ["WAI_4", "WAI_10"]`,
+
+          complex: `[survey]
+name = "Clinical Interactions & Trainee Well-Being"
+min_score = 1
+max_score = 7
+
+[quality]
+max_missing_percent = 0.10
+flag_straightlining = true
+flag_low_variance = true
+
+[scales.emotional_exhaustion]
+items = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]
+reverse_scored = []
+
+[scales.supervision_rapport]
+items = ["SWAI_1", "SWAI_2", "SWAI_3", "SWAI_4", "SWAI_5", "SWAI_6", "SWAI_7", "SWAI_8", "SWAI_9", "SWAI_10", "SWAI_11", "SWAI_12"]
+reverse_scored = []
+
+[scales.peer_support]
+items = ["MSPSS_1", "MSPSS_2", "MSPSS_3", "MSPSS_4"]
+reverse_scored = []
+
+[scales.alliance_total]
+items = ["WAI_1", "WAI_2", "WAI_3", "WAI_4", "WAI_5", "WAI_6", "WAI_7", "WAI_8", "WAI_9", "WAI_10", "WAI_11", "WAI_12"]
+reverse_scored = ["WAI_4", "WAI_10"]`,
+        };
+
+        document.getElementById("configTextarea").value = examples[type];
+        closeExamples();
+
+        if (!isEditingConfig) {
+          toggleConfigEditor();
+        }
+
+        validateConfig();
+      }
+
+      function showHelp() {
+        alert(`🔬 Prism Help
+
+Quick Start:
+1. Select your CSV file with survey responses
+2. Choose or create a configuration file defining your scales
+3. Click "Process Data" to generate cleaned data and reports
+
+Keyboard Shortcuts:
+• Ctrl+O - Open CSV file
+• Ctrl+K - Open config file  
+• Ctrl+Enter - Process data
+
+Output Files:
+• clean_data.csv - Processed data with computed scales
+• summary_stats.txt - Descriptive statistics & Cronbach's alpha
+• quality_report.txt - Quality check results
+
+For more info, check the documentation folder.`);
+      }
+
+      // Listen for textarea changes
+      document
+        .getElementById("configTextarea")
+        .addEventListener("input", () => {
+          configText = document.getElementById("configTextarea").value;
+          // Clear validation on edit
+          document.getElementById("configValidation").classList.remove("show");
+        });
+
+      // Click outside modal to close
+      document
+        .getElementById("examplesModal")
+        .addEventListener("click", (e) => {
+          if (e.target.id === "examplesModal") {
+            closeExamples();
+          }
+        });
+
+      // Initialize app
+      init();
     </script>
   </body>
 </html>

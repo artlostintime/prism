@@ -10,7 +10,7 @@ fn test_cli_help() {
 
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Automated Survey Data Processing"));
+        .stdout(predicate::str::contains("Prism transforms raw survey data"));
 }
 
 #[test]
@@ -31,7 +31,8 @@ fn test_process_sample_data() {
     let _ = fs::remove_file(output_path);
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("examples/sample_data.csv")
         .arg("-c")
         .arg("examples/study_config.toml")
@@ -40,7 +41,7 @@ fn test_process_sample_data() {
 
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Successfully processed"));
+        .stdout(predicate::str::contains("✓ Processing Complete"));
 
     // Verify output file exists
     assert!(Path::new(output_path).exists());
@@ -65,7 +66,8 @@ fn test_process_with_stats_output() {
     let _ = fs::remove_file(stats_path);
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("examples/sample_data.csv")
         .arg("-c")
         .arg("examples/study_config.toml")
@@ -101,7 +103,8 @@ fn test_process_with_quality_report() {
     let _ = fs::remove_file(quality_path);
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("examples/sample_data.csv")
         .arg("-c")
         .arg("examples/study_config.toml")
@@ -127,7 +130,8 @@ fn test_process_with_quality_report() {
 #[test]
 fn test_missing_input_file() {
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("nonexistent.csv")
         .arg("-c")
         .arg("examples/study_config.toml")
@@ -140,7 +144,8 @@ fn test_missing_input_file() {
 #[test]
 fn test_missing_config_file() {
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("examples/sample_data.csv")
         .arg("-c")
         .arg("nonexistent.toml")
@@ -160,7 +165,8 @@ fn test_straightlining_detection() {
     let _ = fs::remove_file(quality_path);
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("tests/fixtures/test_bad.csv")
         .arg("-c")
         .arg("examples/study_config.toml")
@@ -197,7 +203,8 @@ fn test_all_outputs_together() {
     let _ = fs::remove_file(quality_path);
 
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg("examples/sample_data.csv")
         .arg("-c")
         .arg("examples/study_config.toml")
@@ -210,10 +217,8 @@ fn test_all_outputs_together() {
 
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Successfully processed"))
-        .stdout(predicate::str::contains("Output saved to"))
-        .stdout(predicate::str::contains("Summary statistics"))
-        .stdout(predicate::str::contains("Quality report"));
+        .stdout(predicate::str::contains("✓ Processing Complete"));
+    // Note: file save messages are in stderr (INFO logs), not stdout
 
     // Verify all outputs exist
     assert!(Path::new(output_path).exists());

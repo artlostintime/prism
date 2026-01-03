@@ -38,7 +38,8 @@ fn test_reverse_scoring_calculation() {
 
     // Run processing
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -103,7 +104,8 @@ fn test_scale_total_calculation() {
 
     // Run processing
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -155,7 +157,8 @@ fn test_scale_mean_calculation() {
 
     // Run processing
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -213,7 +216,8 @@ fn test_aggregate_statistics() {
 
     // Run with stats output
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
@@ -270,7 +274,8 @@ fn test_missing_data_handling() {
 
     // Run processing - should handle missing data gracefully
     let mut cmd = Command::cargo_bin("prism").unwrap();
-    cmd.arg("-i")
+    cmd.arg("process")
+        .arg("-i")
         .arg(test_csv)
         .arg("-c")
         .arg(test_config)
