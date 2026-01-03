@@ -13,7 +13,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify version matches tag
+        run: |
+          TAG_VERSION="${{ github.ref_name }}"
+          CARGO_VERSION="v$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)"
+          echo "Tag version: $TAG_VERSION"
+          echo "Cargo.toml version: $CARGO_VERSION"
+          if [ "$TAG_VERSION" != "$CARGO_VERSION" ]; then
+            echo "❌ Error: Tag $TAG_VERSION doesn't match Cargo.toml version $CARGO_VERSION"
+            exit 1
+          fi
+          echo "✅ Version check passed"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run tests
+        run: cargo test --all-features
+
   build-cli:
+    needs: [verify-version, test]
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +135,7 @@ jobs:
           retention-days: 1
 
   build-gui:
+    needs: [verify-version, test]
     strategy:
       fail-fast: false
       matrix:
@@ -229,7 +262,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: release-files/*
-          generate_release_notes: true
+          body_path: GITHUB_RELEASE_NOTES.md
           draft: false
           prerelease: false
         env:
