@@ -147,7 +147,7 @@ pub fn calculate_cronbachs_alpha(item_matrix: &[Vec<f64>]) -> f64 {
     let alpha = (k / (k - 1.0)) * (1.0 - (sum_item_variances / total_variance));
 
     // Clamp to [0, 1] range - negative alpha suggests measurement issues
-    alpha.max(0.0).min(1.0)
+    alpha.clamp(0.0, 1.0)
 }
 
 /// Calculate variance of a set of values

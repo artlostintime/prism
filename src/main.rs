@@ -528,7 +528,7 @@ fn main() -> Result<()> {
         } => {
             use prism::longitudinal::{calculate_rci, RCIParams};
 
-            if reliability < 0.0 || reliability > 1.0 {
+            if !(0.0..=1.0).contains(&reliability) {
                 eprintln!("Error: Reliability must be between 0 and 1");
                 std::process::exit(1);
             }

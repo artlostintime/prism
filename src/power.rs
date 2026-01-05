@@ -159,15 +159,13 @@ pub fn calculate_observed_power(params: &PostHocParams) -> Result<PowerResult, P
 fn calculate_n_independent_t(d: f64, alpha: f64, power: f64, tails: u8) -> f64 {
     let z_alpha = inverse_normal_cdf(1.0 - alpha / (tails as f64));
     let z_beta = inverse_normal_cdf(power);
-    let n_per_group = 2.0 * ((z_alpha + z_beta) / d).powi(2);
-    n_per_group
+    2.0 * ((z_alpha + z_beta) / d).powi(2)
 }
 
 fn calculate_n_paired_t(d: f64, alpha: f64, power: f64, tails: u8) -> f64 {
     let z_alpha = inverse_normal_cdf(1.0 - alpha / (tails as f64));
     let z_beta = inverse_normal_cdf(power);
-    let n = ((z_alpha + z_beta) / d).powi(2);
-    n
+    ((z_alpha + z_beta) / d).powi(2)
 }
 
 fn calculate_n_one_sample_t(d: f64, alpha: f64, power: f64, tails: u8) -> f64 {
@@ -180,8 +178,7 @@ fn calculate_n_correlation(r: f64, alpha: f64, power: f64, tails: u8) -> f64 {
     let z_r = 0.5 * ((1.0 + r) / (1.0 - r)).ln();
     let z_alpha = inverse_normal_cdf(1.0 - alpha / (tails as f64));
     let z_beta = inverse_normal_cdf(power);
-    let n = ((z_alpha + z_beta) / z_r).powi(2) + 3.0;
-    n
+    ((z_alpha + z_beta) / z_r).powi(2) + 3.0
 }
 
 // ============================================================================
@@ -192,14 +189,14 @@ fn calculate_power_independent_t(d: f64, n: usize, alpha: f64, tails: u8) -> f64
     let z_alpha = inverse_normal_cdf(1.0 - alpha / (tails as f64));
     let ncp = d * (n as f64 / 2.0).sqrt(); // non-centrality parameter
     let power = 1.0 - normal_cdf(z_alpha - ncp);
-    power.max(0.0).min(1.0)
+    power.clamp(0.0, 1.0)
 }
 
 fn calculate_power_paired_t(d: f64, n: usize, alpha: f64, tails: u8) -> f64 {
     let z_alpha = inverse_normal_cdf(1.0 - alpha / (tails as f64));
     let ncp = d * (n as f64).sqrt();
     let power = 1.0 - normal_cdf(z_alpha - ncp);
-    power.max(0.0).min(1.0)
+    power.clamp(0.0, 1.0)
 }
 
 fn calculate_power_one_sample_t(d: f64, n: usize, alpha: f64, tails: u8) -> f64 {
@@ -212,7 +209,7 @@ fn calculate_power_correlation(r: f64, n: usize, alpha: f64, tails: u8) -> f64 {
     let se = 1.0 / ((n as f64 - 3.0).sqrt());
     let ncp = z_r / se;
     let power = 1.0 - normal_cdf(z_alpha - ncp);
-    power.max(0.0).min(1.0)
+    power.clamp(0.0, 1.0)
 }
 
 // ============================================================================
