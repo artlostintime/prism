@@ -228,9 +228,20 @@ max_score = 7               # Highest possible response (e.g., 7 = "Always")
 max_missing_percent = 0.10    # Flag if >10% of items are missing
 flag_straightlining = true    # Catch people answering the same to everything
 min_response_variance = 0.5   # Flag low variation in responses (optional)
+min_response_time = 30        # Flag suspiciously fast completions (< 30s)
+max_response_time = 300       # Flag suspiciously slow completions (> 5 min)
 ```
 
 **Real example:** If someone answers [3, 3, 3, 3, 3] to all items, that's straightlining and gets flagged.
+
+**NEW in v0.8.0!** 🎉 **Advanced Pattern Detection:**
+
+- **Diagonal Patterns**: Catches 1,2,3,4,5 or 5,4,3,2,1 sequences (careless responding)
+- **Alternating Patterns**: Detects 1,5,1,5,1,5 patterns (not paying attention)
+- **Block Patterns**: Identifies respondents who answer all 1s, then all 5s (suspicious behavior)
+- **Response Time Analysis**: Flags too-fast or too-slow survey completions
+
+These checks run automatically and help you maintain high data quality!
 
 ### The Scales Section (This is where the magic happens!)
 
