@@ -325,6 +325,92 @@ pub fn check_block_pattern(
     }
 }
 
+/// Check for semantic inconsistencies between scales with expected relationships
+///
+/// Detects contradictory response patterns, such as:
+/// - High stress with high well-being (negative correlation expected)
+/// - Low burnout with high work engagement (positive correlation expected)
+/// - Other theoretically inconsistent combinations
+///
+/// # Arguments
+/// * `scale1_name` - Name of the first scale
+/// * `scale1_mean` - Mean score of the first scale
+/// * `scale2_name` - Name of the second scale
+/// * `scale2_mean` - Mean score of the second scale
+/// * `participant_id` - ID of the participant
+/// * `expected_correlation` - Expected correlation direction ("positive" or "negative")
+/// * `min_score` - Minimum possible score (e.g., 1)
+/// * `max_score` - Maximum possible score (e.g., 7)
+/// * `threshold` - Threshold for detecting inconsistency (0.0-1.0, default 0.7)
+/// * `quality_flags` - Mutable vector to add flags to
+/// * `quality_issues` - Mutable vector to add issues to
+///
+/// # Example
+/// ```no_run
+/// # use prism::quality::check_semantic_inconsistency;
+/// # let mut flags = Vec::new();
+/// # let mut issues = Vec::new();
+/// // Expecting negative correlation between stress and well-being
+/// // If both are high (>70th percentile), flag as inconsistent
+/// check_semantic_inconsistency(
+///     "stress", 6.5,
+///     "wellbeing", 6.8,
+///     "P001",
+///     "negative",
+///     1.0, 7.0, 0.7,
+///     &mut flags, &mut issues
+/// );
+/// ```
+pub fn check_semantic_inconsistency(
+    scale1_name: &str,
+    scale1_mean: f64,
+    scale2_name: &str,
+    scale2_mean: f64,
+    participant_id: &str,
+    expected_correlation: &str,
+    min_score: f64,
+    max_score: f64,
+    threshold: f64,
+    quality_flags: &mut Vec<String>,
+    quality_issues: &mut Vec<QualityIssue>,
+) {
+    // Normalize scores to 0-1 range
+    let range = max_score - min_score;
+    let normalized1 = (scale1_mean - min_score) / range;
+    let normalized2 = (scale2_mean - min_score) / range;
+
+    // Check for inconsistencies based on expected correlation
+    let is_inconsistent = match expected_correlation.to_lowercase().as_str() {
+        "negative" => {
+            // Both scales high (>threshold) when negative correlation expected
+            normalized1 > threshold && normalized2 > threshold
+        }
+        "positive" => {
+            // One scale high, other low when positive correlation expected
+            (normalized1 > threshold && normalized2 < (1.0 - threshold))
+                || (normalized2 > threshold && normalized1 < (1.0 - threshold))
+        }
+        _ => false,
+    };
+
+    if is_inconsistent {
+        let issue = format!(
+            "Semantic inconsistency: {} ({:.2}) and {} ({:.2}) show unexpected pattern (expected {} correlation)",
+            scale1_name,
+            scale1_mean,
+            scale2_name,
+            scale2_mean,
+            expected_correlation
+        );
+        quality_flags.push(issue.clone());
+        quality_issues.push(QualityIssue::new(
+            participant_id,
+            "SemanticInconsistency",
+            issue,
+        ));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
