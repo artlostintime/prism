@@ -175,7 +175,10 @@ fn find_similar_headers(target: &str, headers: &[String]) -> Vec<String> {
         })
         .collect();
 
-    similarities.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    // Sort by similarity (descending), handling potential NaN values safely
+    similarities.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal) // Treat NaN as equal
+    });
 
     similarities
         .into_iter()

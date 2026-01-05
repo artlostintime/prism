@@ -56,10 +56,11 @@ pub fn check_straightlining(
     quality_flags: &mut Vec<String>,
     quality_issues: &mut Vec<QualityIssue>,
 ) {
-    if !config
+    // Check if straightlining detection is disabled
+    if config
         .quality
         .as_ref()
-        .is_none_or(|q| q.flag_straightlining)
+        .is_some_and(|q| !q.flag_straightlining)
     {
         return;
     }

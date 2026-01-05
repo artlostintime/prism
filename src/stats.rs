@@ -126,6 +126,11 @@ pub fn calculate_cronbachs_alpha(item_matrix: &[Vec<f64>]) -> f64 {
     // Calculate variance of total scores
     let total_variance = calculate_variance(&total_scores);
 
+    // Handle edge case: if total variance is zero, reliability is undefined
+    if total_variance == 0.0 || total_variance.is_nan() {
+        return 0.0; // No variability means alpha is undefined, return 0
+    }
+
     // Calculate variance of each item
     let mut sum_item_variances = 0.0;
     for item_idx in 0..n_items {
@@ -136,9 +141,13 @@ pub fn calculate_cronbachs_alpha(item_matrix: &[Vec<f64>]) -> f64 {
         sum_item_variances += calculate_variance(&item_scores);
     }
 
-    // Cronbach's alpha formula
+    // Cronbach's alpha formula: α = (k/(k-1)) * (1 - Σvar_i/var_total)
+    // Ensure result is bounded [0, 1] as negative alphas are theoretically possible but not meaningful
     let k = n_items as f64;
-    (k / (k - 1.0)) * (1.0 - (sum_item_variances / total_variance))
+    let alpha = (k / (k - 1.0)) * (1.0 - (sum_item_variances / total_variance));
+
+    // Clamp to [0, 1] range - negative alpha suggests measurement issues
+    alpha.max(0.0).min(1.0)
 }
 
 /// Calculate variance of a set of values

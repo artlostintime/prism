@@ -408,8 +408,8 @@ pub fn generate_html_report(
 "#,
             scale_name,
             scale_name,
-            serde_json::to_string(&bin_labels).unwrap(),
-            serde_json::to_string(&bins).unwrap(),
+            serde_json::to_string(&bin_labels).unwrap_or_else(|_| "[]".to_string()),
+            serde_json::to_string(&bins).unwrap_or_else(|_| "[]".to_string()),
             scale_name,
             stats.mean,
             stats.sd,
@@ -542,14 +542,14 @@ pub fn generate_html_report(
         let issue_types: Vec<String> = issue_counts.keys().cloned().collect();
         let issue_values: Vec<usize> = issue_counts.values().copied().collect();
 
-        html.push_str(&serde_json::to_string(&issue_types).unwrap());
+        html.push_str(&serde_json::to_string(&issue_types).unwrap_or_else(|_| "[]".to_string()));
         html.push_str(
             r#",
                             datasets: [{
                                 label: 'Quality Issues',
                                 data: "#,
         );
-        html.push_str(&serde_json::to_string(&issue_values).unwrap());
+        html.push_str(&serde_json::to_string(&issue_values).unwrap_or_else(|_| "[]".to_string()));
         html.push_str(
             r#",
                                 backgroundColor: [
