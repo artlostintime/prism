@@ -16,7 +16,7 @@ This document outlines planned features and enhancements for future releases.
 
 ---
 
-## ✅ Version 0.3.0 (Current)
+## ✅ Version 0.3.0 (Previous Release)
 
 ### 📚 Pre-built Scale Libraries ✅
 
@@ -104,7 +104,7 @@ format = "wide"  # or "long"
 
 ---
 
-## 🚀 Version 0.4.0 (Current)
+## ✅ Version 0.4.0 (Previous Release)
 
 ### 📈 Power Analysis Helper ✅
 
@@ -153,14 +153,55 @@ tails = 2
 
 ---
 
-## 🚀 Version 0.5.0+ (Future)
+## 🚀 Version 0.5.0 (Current)
 
-### Advanced SPSS Integration
+### 📊 Advanced SPSS Integration ✅
 
-- Native `.sav` file export
-- SPSS syntax generator for all transformations
-- Automatic variable labels and value labels
-- COMPUTE commands for derived variables
+**Status:** Completed | **Priority:** High | **Complexity:** Medium
+
+Comprehensive SPSS syntax generation with full transformation documentation.
+
+**Features:**
+
+- ✅ Enhanced SPSS syntax generator (.sps files)
+- ✅ Comprehensive VARIABLE LABELS with reverse-scoring indicators
+- ✅ VALUE LABELS for Likert scales (5-point, 7-point, custom)
+- ✅ RECODE commands for reverse scoring transformations
+- ✅ COMPUTE commands for scale totals and means
+- ✅ Missing value declarations ($SYSMIS)
+- ✅ Quality flag labels and descriptions
+- ✅ DESCRIPTIVES and RELIABILITY examples
+- ✅ Production-ready SPSS syntax output
+
+**Technical Implementation:**
+
+```bash
+# Generate enhanced SPSS syntax
+prism process --input data.csv --config study.toml --output results.csv --format spss
+# Creates results.sps with complete SPSS transformation syntax
+```
+
+**Generated Syntax Includes:**
+
+- GET DATA with UTF-8 encoding and proper delimiters
+- Variable labels for all items and computed scales
+- Value labels matching survey scale (1-5, 1-7, 0-10)
+- Reverse scoring with RECODE commands
+- Scale computation with MEAN() for missing data handling
+- Missing value handling for out-of-range responses
+- Example DESCRIPTIVES and RELIABILITY commands
+
+**Benefits:**
+
+- Copy-paste ready SPSS syntax
+- Full transparency of all transformations
+- Reproducible analysis pipeline
+- Proper handling of missing data
+- Professional SPSS output for publication
+
+---
+
+## 🚀 Version 0.6.0+ (Future)
 
 ### Survey Platform Integration
 
@@ -232,4 +273,4 @@ Interested in implementing a roadmap feature?
 ---
 
 **Last Updated:** January 5, 2026  
-**Current Version:** 0.3.0
+**Current Version:** 0.5.0
