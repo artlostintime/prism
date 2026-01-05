@@ -244,6 +244,17 @@ pub fn generate_html_report(
 "#,
     );
 
+    let clean_pct = if total_participants > 0 {
+        100.0 * clean_count as f64 / total_participants as f64
+    } else {
+        0.0
+    };
+    let flagged_pct = if total_participants > 0 {
+        100.0 * flagged_count as f64 / total_participants as f64
+    } else {
+        0.0
+    };
+
     html.push_str(&format!(
         r#"
                     <div class="stat-card">
@@ -267,9 +278,9 @@ pub fn generate_html_report(
 "#,
         total_participants,
         clean_count,
-        100.0 * clean_count as f64 / total_participants as f64,
+        clean_pct,
         flagged_count,
-        100.0 * flagged_count as f64 / total_participants as f64,
+        flagged_pct,
         scale_scores.len()
     ));
 
@@ -340,11 +351,24 @@ pub fn generate_html_report(
 
         // Create histogram bins
         let num_bins = 15;
-        let bin_width = (stats.max - stats.min) / num_bins as f64;
+        let range = stats.max - stats.min;
+
+        // Handle edge case: all values identical (range = 0)
+        let bin_width = if range > 1e-10 {
+            range / num_bins as f64
+        } else {
+            1.0 // Default width when all values are the same
+        };
+
         let mut bins = vec![0; num_bins];
 
         for &score in scores {
-            let bin_idx = ((score - stats.min) / bin_width).floor() as usize;
+            let bin_idx = if range > 1e-10 {
+                ((score - stats.min) / bin_width).floor() as usize
+            } else {
+                // All values are the same, put everything in first bin
+                0
+            };
             let bin_idx = bin_idx.min(num_bins - 1);
             bins[bin_idx] += 1;
         }

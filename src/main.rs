@@ -563,11 +563,12 @@ fn main() -> Result<()> {
                     println!("\n✓ RCI Analysis Complete");
                     println!("{}", "=".repeat(50));
                     println!("Total participants: {}", results.len());
-                    println!(
-                        "Reliable change: {} ({:.1}%)",
-                        reliable_count,
+                    let reliable_pct = if results.is_empty() {
+                        0.0
+                    } else {
                         (reliable_count as f64 / results.len() as f64) * 100.0
-                    );
+                    };
+                    println!("Reliable change: {} ({:.1}%)", reliable_count, reliable_pct);
                     println!("  • Decreased: {}", improved_count);
                     println!("  • Increased: {}", worsened_count);
                     println!("\nResults saved to: {}", output);
@@ -965,15 +966,20 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
         println!("✓ Processing Complete");
         println!("{}", "═".repeat(50));
         println!("Total Participants:  {}", processed_count);
-        println!(
-            "Clean Records:       {} ({:.1}%)",
-            clean_count,
+        let clean_pct = if processed_count > 0 {
             (clean_count as f64 / processed_count as f64) * 100.0
-        );
+        } else {
+            0.0
+        };
+        let flagged_pct = if processed_count > 0 {
+            (flagged_count as f64 / processed_count as f64) * 100.0
+        } else {
+            0.0
+        };
+        println!("Clean Records:       {} ({:.1}%)", clean_count, clean_pct);
         println!(
             "Flagged Records:     {} ({:.1}%)",
-            flagged_count,
-            (flagged_count as f64 / processed_count as f64) * 100.0
+            flagged_count, flagged_pct
         );
         println!("Total Issues:        {}", quality_issues.len());
         println!("Processing Time:     {:.2}s", elapsed.as_secs_f64());

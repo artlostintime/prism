@@ -673,8 +673,18 @@ fn run_consort(
 fn generate_consort_text(quality_report: &str, total: usize) -> String {
     let (excluded, issues) = parse_quality_issues(quality_report);
     let retained = total - excluded;
-    let excluded_pct = (excluded as f64 / total as f64) * 100.0;
-    let retained_pct = (retained as f64 / total as f64) * 100.0;
+
+    // Calculate percentages safely (avoid division by zero)
+    let excluded_pct = if total > 0 {
+        (excluded as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
+    let retained_pct = if total > 0 {
+        (retained as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
 
     let mut output = String::new();
     output.push_str("CONSORT Participant Flow Report\n");
@@ -708,6 +718,18 @@ fn generate_consort_json(quality_report: &str, total: usize) -> String {
     let (excluded, issues) = parse_quality_issues(quality_report);
     let retained = total - excluded;
 
+    // Calculate percentages safely (avoid division by zero)
+    let excluded_pct = if total > 0 {
+        (excluded as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
+    let retained_pct = if total > 0 {
+        (retained as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
+
     let issues_json: Vec<String> = issues
         .iter()
         .map(|(reason, count)| format!(r#"{{"reason": "{}", "count": {}}}"#, reason, count))
@@ -726,10 +748,10 @@ fn generate_consort_json(quality_report: &str, total: usize) -> String {
 }}"#,
         total,
         excluded,
-        (excluded as f64 / total as f64) * 100.0,
+        excluded_pct,
         issues_json.join(",\n    "),
         retained,
-        (retained as f64 / total as f64) * 100.0
+        retained_pct
     )
 }
 

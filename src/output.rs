@@ -1708,6 +1708,18 @@ pub fn generate_consort_report(
     let total_excluded = participants_with_issues.len();
     let total_analyzed = total_screened.saturating_sub(total_excluded);
 
+    // Calculate percentages safely (avoid division by zero)
+    let excluded_pct = if total_screened > 0 {
+        (total_excluded as f64 / total_screened as f64) * 100.0
+    } else {
+        0.0
+    };
+    let analyzed_pct = if total_screened > 0 {
+        (total_analyzed as f64 / total_screened as f64) * 100.0
+    } else {
+        0.0
+    };
+
     // Generate report
     let mut report = String::new();
     report.push_str("CONSORT Participant Flow Report\n");
@@ -1721,8 +1733,7 @@ pub fn generate_consort_report(
     report.push_str(&format!("Excluded (Quality Issues)\n"));
     report.push_str(&format!(
         "  n = {} ({:.1}%)\n\n",
-        total_excluded,
-        (total_excluded as f64 / total_screened as f64) * 100.0
+        total_excluded, excluded_pct
     ));
 
     report.push_str("  Exclusion Breakdown:\n");
@@ -1738,20 +1749,13 @@ pub fn generate_consort_report(
     report.push_str(&format!("Final Analysis Sample\n"));
     report.push_str(&format!(
         "  n = {} ({:.1}%)\n\n",
-        total_analyzed,
-        (total_analyzed as f64 / total_screened as f64) * 100.0
+        total_analyzed, analyzed_pct
     ));
 
     report.push_str("================================\n");
     report.push_str("Summary Statistics:\n");
-    report.push_str(&format!(
-        "  Retention rate: {:.1}%\n",
-        (total_analyzed as f64 / total_screened as f64) * 100.0
-    ));
-    report.push_str(&format!(
-        "  Exclusion rate: {:.1}%\n",
-        (total_excluded as f64 / total_screened as f64) * 100.0
-    ));
+    report.push_str(&format!("  Retention rate: {:.1}%\n", analyzed_pct));
+    report.push_str(&format!("  Exclusion rate: {:.1}%\n", excluded_pct));
     report.push_str(&format!(
         "  Total quality issues detected: {}\n",
         quality_issues.len()
@@ -1810,6 +1814,18 @@ pub fn generate_consort_json(
     let total_excluded = participants_with_issues.len();
     let total_analyzed = total_screened.saturating_sub(total_excluded);
 
+    // Calculate percentages safely (avoid division by zero)
+    let excluded_pct = if total_screened > 0 {
+        (total_excluded as f64 / total_screened as f64) * 100.0
+    } else {
+        0.0
+    };
+    let analyzed_pct = if total_screened > 0 {
+        (total_analyzed as f64 / total_screened as f64) * 100.0
+    } else {
+        0.0
+    };
+
     // Build JSON structure
     let consort_data = json!({
         "study_flow": {
@@ -1819,7 +1835,7 @@ pub fn generate_consort_json(
             },
             "excluded": {
                 "n": total_excluded,
-                "percentage": format!("{:.1}", (total_excluded as f64 / total_screened as f64) * 100.0),
+                "percentage": format!("{:.1}", excluded_pct),
                 "description": "Participants excluded due to quality issues",
                 "breakdown": issue_counts.iter()
                     .map(|(k, v)| json!({
@@ -1830,13 +1846,13 @@ pub fn generate_consort_json(
             },
             "analyzed": {
                 "n": total_analyzed,
-                "percentage": format!("{:.1}", (total_analyzed as f64 / total_screened as f64) * 100.0),
+                "percentage": format!("{:.1}", analyzed_pct),
                 "description": "Final analysis sample (clean data)"
             }
         },
         "summary": {
-            "retention_rate": format!("{:.1}", (total_analyzed as f64 / total_screened as f64) * 100.0),
-            "exclusion_rate": format!("{:.1}", (total_excluded as f64 / total_screened as f64) * 100.0),
+            "retention_rate": format!("{:.1}", analyzed_pct),
+            "exclusion_rate": format!("{:.1}", excluded_pct),
             "total_issues_detected": quality_issues.len(),
             "participants_with_issues": total_excluded
         },
