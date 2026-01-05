@@ -4,6 +4,7 @@ use crate::errors::Result;
 use crate::stats::{calculate_cronbachs_alpha, Stats};
 use crate::types::QualityIssue;
 use rust_xlsxwriter::{Format, Workbook};
+use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -1635,6 +1636,220 @@ pub fn generate_data_dictionary_json(config: &SurveyConfig, output_path: &str) -
     });
 
     let json_string = serde_json::to_string_pretty(&dictionary)?;
+    fs::write(output_path, json_string)?;
+
+    Ok(())
+}
+
+/// Generate CONSORT flowchart data for publication reporting
+///
+/// Creates a structured report of participant flow through the study,
+/// including screening, exclusions by reason, and final analysis sample.
+///
+/// # Arguments
+/// * `total_screened` - Total number of participants screened
+/// * `quality_issues` - Vector of quality issues detected
+/// * `output_path` - Path to save the CONSORT report
+///
+/// # Output Format
+/// The report includes:
+/// - Total screened
+/// - Total excluded (with breakdown by reason)
+/// - Total analyzed (clean participants)
+/// - Exclusion reasons with counts
+///
+/// # Example Output
+/// ```text
+/// CONSORT Participant Flow Report
+/// ================================
+///
+/// Screened (n = 100)
+///   ↓
+/// Excluded (n = 15)
+///   - Missing data: 5
+///   - Straightlining: 4
+///   - Careless patterns: 6
+///   ↓
+/// Analyzed (n = 85)
+/// ```
+pub fn generate_consort_report(
+    total_screened: usize,
+    quality_issues: &[QualityIssue],
+    output_path: &str,
+) -> Result<()> {
+    use std::collections::HashMap;
+
+    // Group issues by participant to count unique exclusions
+    let mut participants_with_issues: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
+    let mut issue_counts: HashMap<String, usize> = HashMap::new();
+
+    for issue in quality_issues {
+        participants_with_issues.insert(issue.participant_id.clone());
+
+        // Categorize issue types for reporting
+        let category = match issue.issue_type.as_str() {
+            "MissingData" => "Missing data",
+            "Straightlining" => "Straightlining",
+            "LowVariance" => "Low variance",
+            "OutOfRange" => "Out of range responses",
+            "DiagonalPattern" => "Diagonal pattern",
+            "AlternatingPattern" => "Alternating pattern",
+            "BlockPattern" => "Block pattern",
+            "ResponseTimeFast" => "Response time too fast",
+            "ResponseTimeSlow" => "Response time too slow",
+            "SemanticInconsistency" => "Semantic inconsistency",
+            _ => "Other quality issue",
+        };
+
+        *issue_counts.entry(category.to_string()).or_insert(0) += 1;
+    }
+
+    let total_excluded = participants_with_issues.len();
+    let total_analyzed = total_screened.saturating_sub(total_excluded);
+
+    // Generate report
+    let mut report = String::new();
+    report.push_str("CONSORT Participant Flow Report\n");
+    report.push_str("================================\n\n");
+
+    report.push_str(&format!("Participants Screened\n"));
+    report.push_str(&format!("  n = {}\n\n", total_screened));
+
+    report.push_str("  ↓\n\n");
+
+    report.push_str(&format!("Excluded (Quality Issues)\n"));
+    report.push_str(&format!(
+        "  n = {} ({:.1}%)\n\n",
+        total_excluded,
+        (total_excluded as f64 / total_screened as f64) * 100.0
+    ));
+
+    report.push_str("  Exclusion Breakdown:\n");
+    let mut sorted_issues: Vec<_> = issue_counts.iter().collect();
+    sorted_issues.sort_by(|a, b| b.1.cmp(a.1)); // Sort by count descending
+
+    for (reason, count) in sorted_issues {
+        report.push_str(&format!("    - {}: {} issue(s)\n", reason, count));
+    }
+
+    report.push_str("\n  ↓\n\n");
+
+    report.push_str(&format!("Final Analysis Sample\n"));
+    report.push_str(&format!(
+        "  n = {} ({:.1}%)\n\n",
+        total_analyzed,
+        (total_analyzed as f64 / total_screened as f64) * 100.0
+    ));
+
+    report.push_str("================================\n");
+    report.push_str("Summary Statistics:\n");
+    report.push_str(&format!(
+        "  Retention rate: {:.1}%\n",
+        (total_analyzed as f64 / total_screened as f64) * 100.0
+    ));
+    report.push_str(&format!(
+        "  Exclusion rate: {:.1}%\n",
+        (total_excluded as f64 / total_screened as f64) * 100.0
+    ));
+    report.push_str(&format!(
+        "  Total quality issues detected: {}\n",
+        quality_issues.len()
+    ));
+    report.push_str(&format!("  Participants with issues: {}\n", total_excluded));
+
+    // Write to file
+    fs::write(output_path, report)?;
+
+    Ok(())
+}
+
+/// Generate CONSORT data in JSON format for programmatic use
+///
+/// # Arguments
+/// * `total_screened` - Total number of participants screened
+/// * `quality_issues` - Vector of quality issues detected
+/// * `output_path` - Path to save the JSON file
+pub fn generate_consort_json(
+    total_screened: usize,
+    quality_issues: &[QualityIssue],
+    output_path: &str,
+) -> Result<()> {
+    use std::collections::HashMap;
+
+    // Group issues by participant
+    let mut participants_with_issues: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
+    let mut issue_counts: HashMap<String, usize> = HashMap::new();
+    let mut participant_issues: HashMap<String, Vec<String>> = HashMap::new();
+
+    for issue in quality_issues {
+        participants_with_issues.insert(issue.participant_id.clone());
+
+        let category = match issue.issue_type.as_str() {
+            "MissingData" => "Missing data",
+            "Straightlining" => "Straightlining",
+            "LowVariance" => "Low variance",
+            "OutOfRange" => "Out of range responses",
+            "DiagonalPattern" => "Diagonal pattern",
+            "AlternatingPattern" => "Alternating pattern",
+            "BlockPattern" => "Block pattern",
+            "ResponseTimeFast" => "Response time too fast",
+            "ResponseTimeSlow" => "Response time too slow",
+            "SemanticInconsistency" => "Semantic inconsistency",
+            _ => "Other quality issue",
+        };
+
+        *issue_counts.entry(category.to_string()).or_insert(0) += 1;
+        participant_issues
+            .entry(issue.participant_id.clone())
+            .or_insert_with(Vec::new)
+            .push(category.to_string());
+    }
+
+    let total_excluded = participants_with_issues.len();
+    let total_analyzed = total_screened.saturating_sub(total_excluded);
+
+    // Build JSON structure
+    let consort_data = json!({
+        "study_flow": {
+            "screened": {
+                "n": total_screened,
+                "description": "Total participants screened"
+            },
+            "excluded": {
+                "n": total_excluded,
+                "percentage": format!("{:.1}", (total_excluded as f64 / total_screened as f64) * 100.0),
+                "description": "Participants excluded due to quality issues",
+                "breakdown": issue_counts.iter()
+                    .map(|(k, v)| json!({
+                        "reason": k,
+                        "count": v
+                    }))
+                    .collect::<Vec<_>>()
+            },
+            "analyzed": {
+                "n": total_analyzed,
+                "percentage": format!("{:.1}", (total_analyzed as f64 / total_screened as f64) * 100.0),
+                "description": "Final analysis sample (clean data)"
+            }
+        },
+        "summary": {
+            "retention_rate": format!("{:.1}", (total_analyzed as f64 / total_screened as f64) * 100.0),
+            "exclusion_rate": format!("{:.1}", (total_excluded as f64 / total_screened as f64) * 100.0),
+            "total_issues_detected": quality_issues.len(),
+            "participants_with_issues": total_excluded
+        },
+        "excluded_participants": participants_with_issues.iter()
+            .map(|p| json!({
+                "participant_id": p,
+                "issues": participant_issues.get(p).unwrap_or(&vec![])
+            }))
+            .collect::<Vec<_>>(),
+        "generated": chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+    });
+
+    let json_string = serde_json::to_string_pretty(&consort_data)?;
     fs::write(output_path, json_string)?;
 
     Ok(())

@@ -1,0 +1,61 @@
+{
+  "study_flow": {
+    "screened": {
+      "n": 100,
+      "description": "Total participants screened"
+    },
+    "excluded": {
+      "n": 15,
+      "percentage": "15.0",
+      "description": "Participants excluded due to quality issues",
+      "breakdown": [
+        {
+          "reason": "Missing data",
+          "count": 5
+        },
+        {
+          "reason": "Straightlining",
+          "count": 4
+        },
+        {
+          "reason": "Diagonal pattern",
+          "count": 3
+        },
+        {
+          "reason": "Low variance",
+          "count": 2
+        },
+        {
+          "reason": "Response time too fast",
+          "count": 1
+        }
+      ]
+    },
+    "analyzed": {
+      "n": 85,
+      "percentage": "85.0",
+      "description": "Final analysis sample (clean data)"
+    }
+  },
+  "summary": {
+    "retention_rate": "85.0",
+    "exclusion_rate": "15.0",
+    "total_issues_detected": 15,
+    "participants_with_issues": 15
+  },
+  "excluded_participants": [
+    {
+      "participant_id": "P001",
+      "issues": ["Missing data"]
+    },
+    {
+      "participant_id": "P002",
+      "issues": ["Missing data"]
+    },
+    {
+      "participant_id": "P003",
+      "issues": ["Straightlining"]
+    }
+  ],
+  "generated": "2026-01-06 10:30:00"
+}

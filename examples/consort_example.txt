@@ -1,0 +1,29 @@
+CONSORT Participant Flow Report
+================================
+
+Participants Screened
+  n = 100
+
+  ↓
+
+Excluded (Quality Issues)
+  n = 15 (15.0%)
+
+  Exclusion Breakdown:
+    - Missing data: 5 issue(s)
+    - Straightlining: 4 issue(s)
+    - Diagonal pattern: 3 issue(s)
+    - Low variance: 2 issue(s)
+    - Response time too fast: 1 issue(s)
+
+  ↓
+
+Final Analysis Sample
+  n = 85 (85.0%)
+
+================================
+Summary Statistics:
+  Retention rate: 85.0%
+  Exclusion rate: 15.0%
+  Total quality issues detected: 15
+  Participants with issues: 15
