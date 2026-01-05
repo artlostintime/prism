@@ -868,11 +868,11 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
         None
     };
 
-    for result in reader.records() {
+    for (row_num, result) in reader.records().enumerate() {
         let record = result?;
         let mut out_record: Vec<String> = record.iter().map(|s| s.to_string()).collect();
         let mut quality_flags = Vec::new();
-        let participant_id = get_participant_id(&record, &header_map, &config);
+        let participant_id = get_participant_id(&record, &header_map, &config, row_num + 1);
 
         debug!("Processing participant: {}", participant_id);
 

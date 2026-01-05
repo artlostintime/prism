@@ -180,18 +180,43 @@ pub fn get_participant_id(
     record: &csv::StringRecord,
     header_map: &HashMap<String, usize>,
     config: &SurveyConfig,
+    row_number: usize,
 ) -> String {
-    let id_column = config
-        .survey
-        .participant_id_column
-        .as_deref()
-        .unwrap_or("ResponseId");
+    // Try configured column first
+    if let Some(id_column) = &config.survey.participant_id_column {
+        if let Some(&idx) = header_map.get(id_column) {
+            if let Some(value) = record.get(idx) {
+                if !value.is_empty() {
+                    return value.to_string();
+                }
+            }
+        }
+    }
 
-    header_map
-        .get(id_column)
-        .and_then(|&idx| record.get(idx))
-        .unwrap_or("Unknown")
-        .to_string()
+    // Try common column names
+    let common_names = [
+        "ResponseId",
+        "id",
+        "ID",
+        "participant_id",
+        "ParticipantID",
+        "response_id",
+        "SubjectID",
+        "subject_id",
+    ];
+
+    for name in &common_names {
+        if let Some(&idx) = header_map.get(*name) {
+            if let Some(value) = record.get(idx) {
+                if !value.is_empty() {
+                    return value.to_string();
+                }
+            }
+        }
+    }
+
+    // If still not found, use row number as fallback
+    format!("Row_{}", row_number)
 }
 
 #[cfg(test)]
@@ -205,7 +230,7 @@ mod tests {
         header_map.insert("ResponseId".to_string(), 0);
 
         let config = SurveyConfig::default();
-        let id = get_participant_id(&record, &header_map, &config);
+        let id = get_participant_id(&record, &header_map, &config, 1);
         assert_eq!(id, "P001");
     }
 }
