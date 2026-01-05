@@ -1,4 +1,5 @@
 // tests/longitudinal_test.rs
+use assert_cmd::cargo::CommandCargoExt;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;

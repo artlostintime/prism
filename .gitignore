@@ -2,8 +2,11 @@
 /target/
 /src-tauri/target/
 **/*.rs.bk
+*.pdb
+*.rlib
+*.rmeta
 
-# IDE
+# IDE / Editors
 .vscode/
 .idea/
 *.swp
@@ -12,44 +15,119 @@
 .fleet/
 .helix/
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 desktop.ini
 *.tmp
 *.temp
 
-# Testing outputs
+# Testing outputs (never commit test artifacts)
 /data/processed/*.csv
 /data/processed/*.txt
+/data/processed/*.json
 /tests/output/*.csv
 /tests/output/*.txt
+/tests/output/*.json
+/tests/output/*.html
 
-# Generated files (don't commit outputs)
+# Generated outputs from processing (all formats)
 clean_data.csv
 test_bad.csv
 *_clean.csv
+*_clean.json
+*_clean.xlsx
+*_clean.R
+*_clean.sps
 *_output.csv
+*_output.json
+*_output.txt
+*_output.html
+*_output.xlsx
+*_output.R
+*_output.sps
+*_stats.txt
+*_quality.txt
 summary_stats.txt
 quality_report.txt
 *.log
 
-# Allow example files
-!examples/*.csv
-!examples/*.toml
+# Example outputs (keep templates, exclude generated)
+examples/output_*.csv
+examples/output_*.json
+examples/output_*.xlsx
+examples/output_*.R
+examples/output_*.sps
+examples/output_*.txt
+examples/output_*.html
+examples/clean_*.csv
+examples/pattern_test.csv
+examples/test_*.csv
+examples/*_stats.txt
+examples/*_quality.txt
+examples/data_dictionary.*
+examples/consort_*.txt
 
-# Rust
-Cargo.lock  # Keep if binary, remove if library
-*.pdb
-*.rlib
-*.rmeta
+# Allow example TEMPLATE files
+!examples/study_config.toml
+!examples/sample_data.csv
+!examples/README.md
+!examples/pattern_test_config.toml
+
+# User data directories
+data/
+*.csv
+*.xlsx
+*.sav
+*.dta
+*.sps
+*.R
+
+# Exceptions: Keep example data
+!examples/sample_data.csv
+!tests/fixtures/*.csv
+!docs/**/*.csv
+
+# Rust / Cargo
+Cargo.lock  # Keep for binary projects
+debug/
+incremental/
 
 # Backup and temporary
 *~
 *.bak
 *.backup
 .#*
+\#*\#
 
 # Environment
 .env
 .env.local
+.env.production
+
+# Node modules (if JS tooling added)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Python (if Python scripts added)
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Documentation builds
+docs/_build/
+site/
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+$RECYCLE.BIN/
+ehthumbs.db

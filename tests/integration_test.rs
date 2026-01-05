@@ -1,4 +1,5 @@
 use assert_cmd::Command;
+use assert_cmd::cargo::CommandCargoExt;
 use predicates::prelude::*;
 use std::fs;
 use std::path::Path;

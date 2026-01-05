@@ -1,6 +1,0 @@
-ID,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,test_scale_total,test_scale_mean,quality_flag
-P001,1,2,3,4,5,1,2,3,21.00,2.62,OK
-P002,1,5,1,5,1,5,1,5,24.00,3.00,"Alternating pattern (1,5): test_scale"
-P003,1,1,1,5,5,5,5,5,28.00,3.50,OK
-P004,3,3,3,3,3,3,3,3,24.00,3.00,Straightlining: test_scale; Low variance: test_scale (variance=0.000)
-P005,2,3,4,2,5,3,4,2,25.00,3.12,OK
