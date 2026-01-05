@@ -290,11 +290,11 @@ Interactive HTML reports with distribution plots and quality dashboards.
 
 ---
 
-## � Version 0.8.0 (In Progress)
+## ✅ Version 0.8.0 (Completed)
 
-### 🔍 Advanced Quality Checks (Partial)
+### 🔍 Advanced Quality Checks
 
-**Status:** In Progress | **Priority:** High | **Complexity:** Medium
+**Status:** Completed | **Priority:** High | **Complexity:** Medium
 
 Enhanced quality validation with sophisticated pattern detection and comprehensive quality metrics.
 
@@ -304,24 +304,38 @@ Enhanced quality validation with sophisticated pattern detection and comprehensi
 - ✅ Diagonal pattern detection (ascending/descending sequences like 1,2,3,4,5)
 - ✅ Alternating pattern detection (e.g., 1,5,1,5,1,5)
 - ✅ Block pattern detection (uniform response blocks)
+- ✅ Semantic inconsistency detection (contradictory responses on related scales)
 - ✅ Enhanced HTML reports with doughnut chart and pattern visualization
 - ✅ Data dictionary export (CSV/JSON formats)
-- ✅ 14 comprehensive pattern detection tests
-
-**In Development:**
-
-- 🔄 Semantic inconsistency checks (contradictory responses)
-- 🔄 CONSORT flowchart data generation
-- 🔄 IP duplicate detection
-- 🔄 Bot detection patterns
+- ✅ CONSORT flowchart data generation (publication-ready participant flow)
+- ✅ 170 comprehensive tests (14 pattern + 13 semantic + 8 CONSORT)
 
 **Technical Implementation:**
 
 - New quality check functions in `src/quality.rs`
+  - `check_diagonal_pattern()` - Detects ascending/descending sequences
+  - `check_alternating_pattern()` - Identifies alternating responses
+  - `check_block_pattern()` - Detects uniform response blocks
+  - `check_semantic_inconsistency()` - Flags contradictory scale combinations
 - Data dictionary generators in `src/output.rs`
-- Integrated into processing pipeline
+  - `generate_data_dictionary_csv()` - CSV format documentation
+  - `generate_data_dictionary_json()` - JSON format documentation
+- CONSORT report generators in `src/output.rs`
+  - `generate_consort_report()` - Publication-ready text format
+  - `generate_consort_json()` - Structured JSON for analysis
 - Pattern detection algorithms with configurable thresholds
-- Test suite: 149 tests (14 new pattern detection tests)
+- Test suite: 170 tests (all passing)
+
+**Quality Check Categories:**
+
+1. **Missing Data Detection** - Identifies participants with excessive missing responses
+2. **Straightlining Detection** - Catches uniform responses across all items
+3. **Low Variance Detection** - Flags minimal response variation
+4. **Diagonal Pattern Detection** - Detects sequential patterns (1,2,3,4,5)
+5. **Alternating Pattern Detection** - Identifies alternating extremes (1,5,1,5)
+6. **Block Pattern Detection** - Catches uniform response blocks
+7. **Response Time Validation** - Flags suspiciously fast (<30s) or slow (>300s) completion
+8. **Semantic Inconsistency Detection** - Identifies contradictory responses
 
 **Data Dictionary Features:**
 
@@ -330,9 +344,16 @@ Enhanced quality validation with sophisticated pattern detection and comprehensi
 - Includes metadata: types, value ranges, reverse-scoring status
 - Perfect for data sharing and reproducibility
 
+**CONSORT Flowchart Features:**
+
+- Publication-ready participant flow reporting
+- Tracks exclusions by reason with detailed breakdown
+- Calculates retention and exclusion rates
+- CONSORT-compliant for journal submissions
+
 ---
 
-## �🚀 Version 0.8.0+ (Future)
+## 🚀 Version 0.9.0+ (Future)
 
 ### Survey Platform Integration
 
