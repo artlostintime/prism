@@ -8,12 +8,16 @@ use crate::types::{MissingPercent, QualityIssue};
 fn add_quality_issue(
     participant_id: &str,
     issue_type: &str,
-    description: String,
+    description: &str,
     quality_flags: &mut Vec<String>,
     quality_issues: &mut Vec<QualityIssue>,
 ) {
-    quality_flags.push(description.clone());
-    quality_issues.push(QualityIssue::new(participant_id, issue_type, description));
+    quality_flags.push(description.to_string());
+    quality_issues.push(QualityIssue::new(
+        participant_id,
+        issue_type,
+        description.to_string(),
+    ));
 }
 
 /// Check for missing data issues
@@ -47,7 +51,7 @@ pub fn check_missing_data(
             add_quality_issue(
                 participant_id,
                 ISSUE_MISSING_DATA,
-                description,
+                &description,
                 quality_flags,
                 quality_issues,
             );
@@ -91,7 +95,7 @@ pub fn check_straightlining(
             add_quality_issue(
                 participant_id,
                 ISSUE_STRAIGHTLINING,
-                description,
+                &description,
                 quality_flags,
                 quality_issues,
             );
@@ -140,7 +144,7 @@ pub fn check_low_variance(
                 add_quality_issue(
                     participant_id,
                     ISSUE_LOW_VARIANCE,
-                    description,
+                    &description,
                     quality_flags,
                     quality_issues,
                 );
@@ -174,7 +178,7 @@ pub fn check_response_time(
                 add_quality_issue(
                     participant_id,
                     ISSUE_SLOW_RESPONSE,
-                    description,
+                    &description,
                     quality_flags,
                     quality_issues,
                 );
@@ -190,7 +194,7 @@ pub fn check_response_time(
                 add_quality_issue(
                     participant_id,
                     ISSUE_FAST_RESPONSE,
-                    description,
+                    &description,
                     quality_flags,
                     quality_issues,
                 );
@@ -261,7 +265,7 @@ pub fn check_diagonal_pattern(
         add_quality_issue(
             participant_id,
             ISSUE_DIAGONAL_PATTERN,
-            description,
+            &description,
             quality_flags,
             quality_issues,
         );
@@ -315,7 +319,7 @@ pub fn check_alternating_pattern(
             add_quality_issue(
                 participant_id,
                 ISSUE_ALTERNATING_PATTERN,
-                description,
+                &description,
                 quality_flags,
                 quality_issues,
             );
@@ -367,7 +371,7 @@ pub fn check_block_pattern(
         add_quality_issue(
             participant_id,
             ISSUE_BLOCK_PATTERN,
-            description,
+            &description,
             quality_flags,
             quality_issues,
         );
@@ -455,7 +459,7 @@ pub fn check_semantic_inconsistency(
         add_quality_issue(
             participant_id,
             ISSUE_SEMANTIC_INCONSISTENCY,
-            description,
+            &description,
             quality_flags,
             quality_issues,
         );

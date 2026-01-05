@@ -134,11 +134,27 @@ pub fn calculate_cronbachs_alpha(item_matrix: &[Vec<f64>]) -> f64 {
     // Calculate variance of each item
     let mut sum_item_variances = 0.0;
     for item_idx in 0..n_items {
-        let mut item_scores = Vec::with_capacity(n_participants);
+        // Inline calculation without allocation
+        let mut sum = 0.0;
         for row in item_matrix {
-            item_scores.push(row[item_idx]);
+            sum += row[item_idx];
         }
-        sum_item_variances += calculate_variance(&item_scores);
+        let mean = sum / n_participants as f64;
+
+        let variance = if n_participants > 1 {
+            let sum_sq: f64 = item_matrix
+                .iter()
+                .map(|row| {
+                    let diff = row[item_idx] - mean;
+                    diff * diff
+                })
+                .sum();
+            sum_sq / (n_participants - 1) as f64
+        } else {
+            0.0
+        };
+
+        sum_item_variances += variance;
     }
 
     // Cronbach's alpha formula: α = (k/(k-1)) * (1 - Σvar_i/var_total)

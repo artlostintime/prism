@@ -150,8 +150,8 @@ pub fn generate_quality_report(
         writeln!(file, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")?;
         writeln!(file)?;
 
-        // Group by issue type
-        let mut by_type: HashMap<String, Vec<&QualityIssue>> = HashMap::new();
+        // Group by issue type with capacity hint
+        let mut by_type: HashMap<String, Vec<&QualityIssue>> = HashMap::with_capacity(8);
         for issue in quality_issues {
             by_type
                 .entry(issue.issue_type.clone())
@@ -1678,8 +1678,8 @@ pub fn generate_consort_report(
 
     // Group issues by participant to count unique exclusions
     let mut participants_with_issues: std::collections::HashSet<String> =
-        std::collections::HashSet::new();
-    let mut issue_counts: HashMap<String, usize> = HashMap::new();
+        std::collections::HashSet::with_capacity(quality_issues.len() / 2);
+    let mut issue_counts: HashMap<String, usize> = HashMap::with_capacity(8);
 
     for issue in quality_issues {
         participants_with_issues.insert(issue.participant_id.clone());
@@ -1772,9 +1772,10 @@ pub fn generate_consort_json(
 
     // Group issues by participant
     let mut participants_with_issues: std::collections::HashSet<String> =
-        std::collections::HashSet::new();
-    let mut issue_counts: HashMap<String, usize> = HashMap::new();
-    let mut participant_issues: HashMap<String, Vec<String>> = HashMap::new();
+        std::collections::HashSet::with_capacity(quality_issues.len() / 2);
+    let mut issue_counts: HashMap<String, usize> = HashMap::with_capacity(8);
+    let mut participant_issues: HashMap<String, Vec<String>> =
+        HashMap::with_capacity(quality_issues.len() / 2);
 
     for issue in quality_issues {
         participants_with_issues.insert(issue.participant_id.clone());

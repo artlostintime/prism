@@ -917,7 +917,7 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
                 scale_items_matrix
                     .get_mut(scale_name)
                     .unwrap()
-                    .push(scale_result.item_values.clone());
+                    .push(scale_result.item_values); // Removed unnecessary clone
             } else {
                 out_record.push("NA".to_string());
                 out_record.push("NA".to_string());
