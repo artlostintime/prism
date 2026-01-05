@@ -62,6 +62,13 @@ max_score = 7
 [quality]
 max_missing_percent = 0.10
 flag_straightlining = true
+flag_low_variance = true
+flag_diagonal_pattern = true
+flag_alternating_pattern = true
+flag_block_pattern = true
+check_response_time = true
+min_response_time = 30
+max_response_time = 300
 
 # Add your scales below
 [scales.my_scale]
@@ -72,6 +79,13 @@ reverse_scored = []
 [scales.another_scale]
 items = ["Q10", "Q11", "Q12"]
 reverse_scored = ["Q12"]
+
+# Optional: Semantic Inconsistency Checks
+# [semantic_checks.stress_wellbeing]
+# scale1 = "stress"
+# scale2 = "wellbeing"
+# expected_correlation = "negative"
+# threshold = 0.7
 "#
     .to_string()
 }
@@ -313,6 +327,247 @@ fn generate_scale_config(scale_id: String) -> Result<String, String> {
     prism::scales::generate_scale_config(&scale_id).map_err(|e| e.to_string())
 }
 
+// COMMAND 11: Generate Data Dictionary (v0.8.0)
+#[command]
+fn run_dictionary(
+    config_path: String,
+    output_path: String,
+    format: String,
+) -> Result<String, String> {
+    let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
+
+    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("target")
+        .join("release")
+        .join(cli_name);
+
+    let cli_path = if cli_path.exists() {
+        cli_path
+    } else {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("target")
+            .join("debug")
+            .join(cli_name)
+    };
+
+    if !cli_path.exists() {
+        return Err(format!(
+            "CLI binary not found at {:?}\n\nPlease build first: cargo build --release",
+            cli_path
+        ));
+    }
+
+    let mut cmd = Command::new(&cli_path);
+    cmd.arg("dictionary")
+        .arg("--config")
+        .arg(&config_path)
+        .arg("--output")
+        .arg(&output_path);
+
+    if format == "json" {
+        cmd.arg("--format").arg("json");
+    }
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to execute: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Dictionary generation failed:\n\n{}", stderr));
+    }
+
+    Ok(format!(
+        "Success! Data dictionary saved to:\n{}",
+        output_path
+    ))
+}
+
+// COMMAND 12: Generate CONSORT Flowchart (v0.8.0)
+#[command]
+fn run_consort(
+    input_path: String,
+    config_path: String,
+    output_path: String,
+    format: String,
+) -> Result<String, String> {
+    let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
+
+    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("target")
+        .join("release")
+        .join(cli_name);
+
+    let cli_path = if cli_path.exists() {
+        cli_path
+    } else {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("target")
+            .join("debug")
+            .join(cli_name)
+    };
+
+    if !cli_path.exists() {
+        return Err(format!(
+            "CLI binary not found at {:?}\n\nPlease build first: cargo build --release",
+            cli_path
+        ));
+    }
+
+    // First process the data
+    let output_folder = Path::new(&output_path)
+        .parent()
+        .unwrap_or(Path::new(&output_path));
+    let processed_csv = output_folder.join("consort_processed.csv");
+    let quality_report = output_folder.join("consort_quality.txt");
+
+    // Run processing to generate quality report
+    let process_output = Command::new(&cli_path)
+        .arg("process")
+        .arg("--input")
+        .arg(&input_path)
+        .arg("--config")
+        .arg(&config_path)
+        .arg("--output")
+        .arg(&processed_csv)
+        .arg("--quality-report")
+        .arg(&quality_report)
+        .output()
+        .map_err(|e| format!("Failed to process data: {}", e))?;
+
+    if !process_output.status.success() {
+        let stderr = String::from_utf8_lossy(&process_output.stderr);
+        return Err(format!("Data processing failed:\n\n{}", stderr));
+    }
+
+    // Read quality report and generate CONSORT
+    let quality_content = fs::read_to_string(&quality_report)
+        .map_err(|e| format!("Failed to read quality report: {}", e))?;
+
+    // Count total participants from CSV
+    let csv_file = fs::File::open(&input_path).map_err(|e| format!("Cannot open CSV: {}", e))?;
+    let reader = std::io::BufReader::new(csv_file);
+    let total_participants = reader.lines().count() - 1; // Exclude header
+
+    // Generate CONSORT content
+    let consort_content = if format == "json" {
+        generate_consort_json(&quality_content, total_participants)
+    } else {
+        generate_consort_text(&quality_content, total_participants)
+    };
+
+    fs::write(&output_path, consort_content)
+        .map_err(|e| format!("Failed to write CONSORT report: {}", e))?;
+
+    Ok(format!(
+        "Success! CONSORT flowchart saved to:\n{}",
+        output_path
+    ))
+}
+
+// Helper: Generate CONSORT text format
+fn generate_consort_text(quality_report: &str, total: usize) -> String {
+    let (excluded, issues) = parse_quality_issues(quality_report);
+    let retained = total - excluded;
+    let excluded_pct = (excluded as f64 / total as f64) * 100.0;
+    let retained_pct = (retained as f64 / total as f64) * 100.0;
+
+    let mut output = String::new();
+    output.push_str("CONSORT Participant Flow Report\n");
+    output.push_str("================================\n\n");
+    output.push_str(&format!("Participants Screened\n  n = {}\n\n", total));
+    output.push_str("  ↓\n\n");
+    output.push_str(&format!(
+        "Excluded (Quality Issues)\n  n = {} ({:.1}%)\n\n",
+        excluded, excluded_pct
+    ));
+
+    if !issues.is_empty() {
+        output.push_str("  Exclusion Breakdown:\n");
+        for (reason, count) in issues {
+            output.push_str(&format!("    - {}: {} issue(s)\n", reason, count));
+        }
+        output.push_str("\n");
+    }
+
+    output.push_str("  ↓\n\n");
+    output.push_str(&format!(
+        "Final Analysis Sample\n  n = {} ({:.1}%)\n",
+        retained, retained_pct
+    ));
+
+    output
+}
+
+// Helper: Generate CONSORT JSON format
+fn generate_consort_json(quality_report: &str, total: usize) -> String {
+    let (excluded, issues) = parse_quality_issues(quality_report);
+    let retained = total - excluded;
+
+    let issues_json: Vec<String> = issues
+        .iter()
+        .map(|(reason, count)| format!(r#"{{"reason": "{}", "count": {}}}"#, reason, count))
+        .collect();
+
+    format!(
+        r#"{{
+  "total_screened": {},
+  "excluded": {},
+  "excluded_percent": {:.1},
+  "exclusion_reasons": [
+    {}
+  ],
+  "final_sample": {},
+  "retention_rate": {:.1}
+}}"#,
+        total,
+        excluded,
+        (excluded as f64 / total as f64) * 100.0,
+        issues_json.join(",\n    "),
+        retained,
+        (retained as f64 / total as f64) * 100.0
+    )
+}
+
+// Helper: Parse quality report for issues
+fn parse_quality_issues(quality_report: &str) -> (usize, Vec<(String, usize)>) {
+    let mut excluded = 0;
+    let mut issues: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+
+    for line in quality_report.lines() {
+        if line.contains("flagged") || line.contains("detected") {
+            excluded += 1;
+
+            if line.contains("missing") || line.contains("Missing") {
+                *issues.entry("Missing data".to_string()).or_insert(0) += 1;
+            } else if line.contains("straightlin") || line.contains("Straightlin") {
+                *issues.entry("Straightlining".to_string()).or_insert(0) += 1;
+            } else if line.contains("diagonal") || line.contains("Diagonal") {
+                *issues.entry("Diagonal pattern".to_string()).or_insert(0) += 1;
+            } else if line.contains("alternating") || line.contains("Alternating") {
+                *issues.entry("Alternating pattern".to_string()).or_insert(0) += 1;
+            } else if line.contains("block") || line.contains("Block") {
+                *issues.entry("Block pattern".to_string()).or_insert(0) += 1;
+            } else if line.contains("variance") || line.contains("Variance") {
+                *issues.entry("Low variance".to_string()).or_insert(0) += 1;
+            } else if line.contains("time") || line.contains("Time") {
+                *issues.entry("Response time".to_string()).or_insert(0) += 1;
+            } else if line.contains("semantic") || line.contains("Semantic") {
+                *issues
+                    .entry("Semantic inconsistency".to_string())
+                    .or_insert(0) += 1;
+            }
+        }
+    }
+
+    let issues_vec: Vec<(String, usize)> = issues.into_iter().collect();
+    (excluded, issues_vec)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -327,7 +582,9 @@ pub fn run() {
             open_folder,
             get_available_scales,
             get_scale_info,
-            generate_scale_config
+            generate_scale_config,
+            run_dictionary,
+            run_consort
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

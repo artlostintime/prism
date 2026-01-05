@@ -681,8 +681,10 @@
       <!-- Header -->
       <div class="header">
         <div>
-          <h1>🔬 Prism</h1>
-          <p class="subtitle">Psychology Survey Data Processor</p>
+          <h1>🔬 Prism v0.8.0</h1>
+          <p class="subtitle">
+            Psychology Survey Data Processor with Advanced Quality Checks
+          </p>
         </div>
         <button class="help-btn" onclick="showHelp()" title="Help & Examples">
           ❓
@@ -810,6 +812,114 @@
       >
         <span>▶</span> Process Data
       </button>
+
+      <!-- v0.8.0 New Features Section -->
+      <div
+        class="section"
+        id="v080Features"
+        style="
+          margin-top: 2rem;
+          border-top: 2px solid var(--border);
+          padding-top: 2rem;
+        "
+      >
+        <h3
+          style="margin: 0 0 1rem 0; color: var(--primary); font-size: 1.1rem"
+        >
+          🎉 v0.8.0 Advanced Features
+        </h3>
+
+        <!-- Data Dictionary Export -->
+        <div style="margin-bottom: 1.5rem">
+          <div class="section-header">
+            <label class="section-label">
+              <span>📖 Data Dictionary</span>
+              <span class="tooltip">
+                ⓘ
+                <span class="tooltip-text">
+                  Generate comprehensive variable documentation for
+                  reproducibility. Perfect for open science and journal
+                  supplementary materials.
+                </span>
+              </span>
+            </label>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center">
+            <select
+              id="dictFormat"
+              style="
+                padding: 0.6rem;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                flex: 1;
+              "
+            >
+              <option value="csv">CSV Format</option>
+              <option value="json">JSON Format</option>
+            </select>
+            <button
+              class="btn-secondary"
+              onclick="generateDictionary()"
+              style="width: auto; padding: 0.6rem 1.5rem"
+            >
+              📥 Export Dictionary
+            </button>
+          </div>
+        </div>
+
+        <!-- CONSORT Flowchart -->
+        <div>
+          <div class="section-header">
+            <label class="section-label">
+              <span>📊 CONSORT Flowchart</span>
+              <span class="tooltip">
+                ⓘ
+                <span class="tooltip-text">
+                  Generate publication-ready participant flow diagrams following
+                  CONSORT guidelines. Tracks exclusions by quality check type.
+                </span>
+              </span>
+            </label>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center">
+            <select
+              id="consortFormat"
+              style="
+                padding: 0.6rem;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                flex: 1;
+              "
+            >
+              <option value="text">Text Format</option>
+              <option value="json">JSON Format</option>
+            </select>
+            <button
+              class="btn-secondary"
+              onclick="generateConsort()"
+              style="width: auto; padding: 0.6rem 1.5rem"
+            >
+              📋 Generate CONSORT
+            </button>
+          </div>
+        </div>
+
+        <div
+          style="
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #eff6ff;
+            border-left: 3px solid var(--info);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--text);
+          "
+        >
+          💡 <strong>New in v0.8.0:</strong> Pattern detection (diagonal,
+          alternating, block), semantic inconsistency checks, and enhanced
+          quality reporting
+        </div>
+      </div>
 
       <!-- Progress Bar -->
       <div id="progressContainer" class="progress-container">
@@ -1328,7 +1438,15 @@
           progressText.textContent = "Complete!";
 
           if (result.includes("Success") || result.includes("✅")) {
-            showStatus(result, "success");
+            const enhancedResult =
+              result +
+              `\n\n🎉 New in v0.8.0: Your data was checked for 8 quality categories including pattern detection!\n\n` +
+              `<div class="status-actions">` +
+              `<button class="btn-status" onclick="openOutputFolder()">📁 Open Folder</button>` +
+              `<button class="btn-status" onclick="generateDictionary()">📖 Data Dictionary</button>` +
+              `<button class="btn-status" onclick="generateConsort()">📊 CONSORT Report</button>` +
+              `</div>`;
+            showStatus(enhancedResult, "success");
 
             // Enable open folder button
             const openBtn = document.getElementById("openFolderBtn");
@@ -1432,6 +1550,9 @@ max_score = 5
 [quality]
 max_missing_percent = 0.10
 flag_straightlining = true
+flag_diagonal_pattern = true
+flag_alternating_pattern = true
+flag_block_pattern = true
 
 [scales.satisfaction]
 items = ["Q1", "Q2", "Q3", "Q4", "Q5"]
@@ -1445,6 +1566,13 @@ max_score = 7
 [quality]
 max_missing_percent = 0.10
 flag_straightlining = true
+flag_low_variance = true
+flag_diagonal_pattern = true
+flag_alternating_pattern = true
+flag_block_pattern = true
+check_response_time = true
+min_response_time = 30
+max_response_time = 300
 
 [scales.emotional_exhaustion]
 items = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]
@@ -1466,6 +1594,8 @@ max_score = 7
 [quality]
 max_missing_percent = 0.15
 flag_straightlining = true
+flag_diagonal_pattern = true
+flag_alternating_pattern = true
 
 [scales.alliance_total]
 items = ["WAI_1", "WAI_2", "WAI_3", "WAI_4", "WAI_5", "WAI_6", "WAI_7", "WAI_8", "WAI_9", "WAI_10", "WAI_11", "WAI_12"]
@@ -1480,6 +1610,12 @@ max_score = 7
 max_missing_percent = 0.10
 flag_straightlining = true
 flag_low_variance = true
+flag_diagonal_pattern = true
+flag_alternating_pattern = true
+flag_block_pattern = true
+check_response_time = true
+min_response_time = 30
+max_response_time = 300
 
 [scales.emotional_exhaustion]
 items = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]
@@ -1495,7 +1631,14 @@ reverse_scored = []
 
 [scales.alliance_total]
 items = ["WAI_1", "WAI_2", "WAI_3", "WAI_4", "WAI_5", "WAI_6", "WAI_7", "WAI_8", "WAI_9", "WAI_10", "WAI_11", "WAI_12"]
-reverse_scored = ["WAI_4", "WAI_10"]`,
+reverse_scored = ["WAI_4", "WAI_10"]
+
+# v0.8.0 - Semantic Inconsistency Check
+[semantic_checks.stress_exhaustion]
+scale1 = "emotional_exhaustion"
+scale2 = "peer_support"
+expected_correlation = "negative"
+threshold = 0.7`,
         };
 
         document.getElementById("configTextarea").value = examples[type];
@@ -1509,12 +1652,19 @@ reverse_scored = ["WAI_4", "WAI_10"]`,
       }
 
       function showHelp() {
-        alert(`🔬 Prism Help
+        alert(`🔬 Prism v0.8.0 Help
 
 Quick Start:
 1. Select your CSV file with survey responses
 2. Choose or create a configuration file defining your scales
 3. Click "Process Data" to generate cleaned data and reports
+
+🎉 New in v0.8.0:
+• Pattern Detection - Diagonal, alternating, and block patterns
+• Data Dictionary - CSV/JSON export for reproducibility
+• CONSORT Flowcharts - Publication-ready participant flow
+• Semantic Inconsistency - Contradictory response detection
+• Enhanced Quality Reports - 8 comprehensive check categories
 
 Keyboard Shortcuts:
 • Ctrl+O - Open CSV file
@@ -1524,7 +1674,12 @@ Keyboard Shortcuts:
 Output Files:
 • clean_data.csv - Processed data with computed scales
 • summary_stats.txt - Descriptive statistics & Cronbach's alpha
-• quality_report.txt - Quality check results
+• quality_report.txt - Comprehensive quality check results
+
+Advanced Features:
+• Data Dictionary - Document all variables and scales
+• CONSORT Report - Track participant exclusions by reason
+• Pattern Alerts - Automatically detect careless responding
 
 For more info, check the documentation folder.`);
       }
@@ -1549,6 +1704,107 @@ For more info, check the documentation folder.`);
 
       // Initialize app
       init();
+
+      // v0.8.0 NEW FUNCTIONS
+
+      // Generate Data Dictionary
+      async function generateDictionary() {
+        if (!configFilePath && !configText) {
+          showStatus("Please select or create a config file first", "error");
+          return;
+        }
+
+        try {
+          showStatus("Generating data dictionary...", "processing");
+
+          // Save config if using editor
+          let configPath = configFilePath;
+          if (!configFilePath && configText) {
+            if (!csvFilePath) {
+              showStatus("Please select a CSV file first", "error");
+              return;
+            }
+            configPath = await window.__TAURI__.core.invoke(
+              "save_config_text",
+              { configText, csvPath: csvFilePath }
+            );
+          }
+
+          const format = document.getElementById("dictFormat").value;
+          const ext = format === "json" ? ".json" : ".csv";
+          const outputFile = outputPath
+            ? outputPath + "data_dictionary" + ext
+            : csvFilePath.replace(/\.csv$/i, "_dictionary" + ext);
+
+          await window.__TAURI__.core.invoke("run_dictionary", {
+            configPath,
+            outputPath: outputFile,
+            format,
+          });
+
+          showStatus(
+            `✅ Data dictionary saved!\n\nLocation: ${outputFile}\n\n` +
+              `<div class="status-actions">` +
+              `<button class="btn-status" onclick="openOutputFolder()">📁 Open Folder</button>` +
+              `</div>`,
+            "success"
+          );
+        } catch (error) {
+          console.error("Dictionary generation error:", error);
+          showStatus(`Dictionary generation failed:\n\n${error}`, "error");
+        }
+      }
+
+      // Generate CONSORT Flowchart
+      async function generateConsort() {
+        if (!csvFilePath) {
+          showStatus("Please select a CSV file first", "error");
+          return;
+        }
+
+        if (!configFilePath && !configText) {
+          showStatus("Please select or create a config file first", "error");
+          return;
+        }
+
+        try {
+          showStatus("Generating CONSORT flowchart...", "processing");
+
+          // Save config if using editor
+          let configPath = configFilePath;
+          if (!configFilePath && configText) {
+            configPath = await window.__TAURI__.core.invoke(
+              "save_config_text",
+              { configText, csvPath: csvFilePath }
+            );
+          }
+
+          const format = document.getElementById("consortFormat").value;
+          const ext = format === "json" ? ".json" : ".txt";
+          const outputFile = outputPath
+            ? outputPath + "consort_report" + ext
+            : csvFilePath.replace(/\.csv$/i, "_consort" + ext);
+
+          await window.__TAURI__.core.invoke("run_consort", {
+            inputPath: csvFilePath,
+            configPath,
+            outputPath: outputFile,
+            format,
+          });
+
+          showStatus(
+            `✅ CONSORT flowchart generated!\n\nLocation: ${outputFile}\n\n` +
+              `The report shows participant flow with exclusions by quality check type.\n\n` +
+              `<div class="status-actions">` +
+              `<button class="btn-status" onclick="openOutputFolder()">📁 Open Folder</button>` +
+              `</div>`,
+            "success"
+          );
+        } catch (error) {
+          console.error("CONSORT generation error:", error);
+          showStatus(`CONSORT generation failed:\n\n${error}`, "error");
+        }
+      }
     </script>
   </body>
 </html>
