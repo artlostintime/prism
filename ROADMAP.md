@@ -153,7 +153,7 @@ tails = 2
 
 ---
 
-## 🚀 Version 0.5.0 (Current)
+## ✅ Version 0.5.0 (Previous Release)
 
 ### 📊 Advanced SPSS Integration ✅
 
@@ -201,7 +201,57 @@ prism process --input data.csv --config study.toml --output results.csv --format
 
 ---
 
-## 🚀 Version 0.6.0+ (Future)
+## 🚀 Version 0.6.0 (Current)
+
+### 📋 Reproducibility Features ✅
+
+**Status:** Completed | **Priority:** High | **Complexity:** Medium
+
+Comprehensive R and Python analysis scripts for reproducible research.
+
+**Features:**
+
+- ✅ Enhanced R script generation with full analysis pipeline
+- ✅ Python script generation with pandas/pingouin/matplotlib
+- ✅ Reliability analysis (Cronbach's alpha with psych/pingouin)
+- ✅ Descriptive statistics and data summaries
+- ✅ Data visualization (distributions, box plots, correlation matrices)
+- ✅ Quality check filtering and comparisons
+- ✅ Export-ready summary tables
+- ✅ Professional plot generation
+
+**Technical Implementation:**
+
+```bash
+# Generate enhanced R analysis script
+prism process --input data.csv --config study.toml --output results.csv --format r
+
+# Generate Python analysis script
+prism process --input data.csv --config study.toml --output results.csv --format python
+```
+
+**Generated Scripts Include:**
+
+- Complete data import and cleaning pipeline
+- Reliability analysis with Cronbach's alpha (psych::alpha or pingouin)
+- Comprehensive descriptive statistics for all scales
+- Distribution histograms with mean lines
+- Box plots comparing quality flags
+- Correlation matrices and heatmaps
+- Export summary statistics tables
+- Publication-quality visualizations (300 DPI)
+
+**Benefits:**
+
+- Reproducible analysis workflows
+- Ready-to-run code for R or Python users
+- No manual coding required for standard analyses
+- Professional visualizations included
+- Full transparency of analytical steps
+
+---
+
+## 🚀 Version 0.7.0+ (Future)
 
 ### Survey Platform Integration
 
@@ -273,4 +323,4 @@ Interested in implementing a roadmap feature?
 ---
 
 **Last Updated:** January 5, 2026  
-**Current Version:** 0.5.0
+**Current Version:** 0.6.0

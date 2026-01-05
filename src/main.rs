@@ -1018,6 +1018,11 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
                 generate_r_script(&options.output, &config, &r_path)?;
                 info!("R script saved to: {}", r_path);
             }
+            OutputFormat::Python => {
+                let py_path = options.output.replace(".csv", ".py");
+                generate_python_script(&options.output, &config, &py_path)?;
+                info!("Python script saved to: {}", py_path);
+            }
             OutputFormat::Csv => {
                 // Already saved
             }

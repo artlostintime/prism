@@ -829,6 +829,49 @@ prism power --test independent-t --effect-size 0.5 --power 0.80 --alpha 0.01
 
 ---
 
+## 🔬 Reproducible Analysis Scripts (NEW in v0.6.0!)
+
+Generate complete, ready-to-run analysis scripts in R or Python with visualizations, reliability analysis, and publication-quality outputs!
+
+### R Analysis Script
+
+```bash
+prism process -i data.csv -c config.toml -o results.csv --format r
+```
+
+Creates `results.R` with:
+
+- ✅ Data import & cleaning with tidyverse
+- ✅ Reliability analysis (Cronbach's α with psych)
+- ✅ Descriptive statistics
+- ✅ Professional ggplot2 visualizations (300 DPI)
+- ✅ Correlation matrices
+- ✅ Export-ready tables
+
+### Python Analysis Script
+
+```bash
+prism process -i data.csv -c config.toml -o results.csv --format python
+```
+
+Creates `results.py` with:
+
+- ✅ pandas/numpy data manipulation
+- ✅ pingouin for reliability (α with CIs)
+- ✅ matplotlib/seaborn visualizations
+- ✅ scipy statistical functions
+- ✅ Publication-quality plots
+
+### Benefits
+
+🎯 **No Manual Coding** - Complete analysis scripts generated automatically  
+📊 **Publication-Quality** - Professional plots at 300 DPI  
+🔄 **Fully Reproducible** - Share scripts with your data for transparency  
+📝 **Methods Documentation** - Scripts show exactly what was done  
+🚀 **Time Savings** - Skip hours of coding for standard analyses
+
+---
+
 ## �📖 Need More Help?
 
 ### Quick Links

@@ -130,6 +130,7 @@ pub enum OutputFormat {
     Json,
     Spss,
     R,
+    Python,
 }
 
 impl OutputFormat {
@@ -140,6 +141,7 @@ impl OutputFormat {
             OutputFormat::Json => "json",
             OutputFormat::Spss => "sps",
             OutputFormat::R => "R",
+            OutputFormat::Python => "py",
         }
     }
 }
