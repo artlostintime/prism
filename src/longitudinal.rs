@@ -349,7 +349,7 @@ fn wide_to_long(params: ReshapeParams) -> Result<usize> {
             if params.waves.iter().any(|w| w == wave_name) {
                 variable_map
                     .entry(var_name.to_string())
-                    .or_insert_with(HashMap::new)
+                    .or_default()
                     .insert(wave_name.to_string(), col_idx);
             }
         }
@@ -460,10 +460,7 @@ fn long_to_wide(params: ReshapeParams) -> Result<usize> {
         let wave = record.get(time_col_idx).unwrap_or("").to_string();
 
         all_waves.insert(wave.clone());
-        participant_data
-            .entry(id)
-            .or_insert_with(HashMap::new)
-            .insert(wave, record);
+        participant_data.entry(id).or_default().insert(wave, record);
     }
 
     // Sort waves for consistent column order
@@ -661,7 +658,7 @@ fn write_rci_results(results: &[RCIResult], output_path: &str) -> Result<()> {
     let mut writer = Writer::from_writer(output_file);
 
     // Write header
-    writer.write_record(&[
+    writer.write_record([
         "ParticipantID",
         "Baseline",
         "Followup",
@@ -673,7 +670,7 @@ fn write_rci_results(results: &[RCIResult], output_path: &str) -> Result<()> {
 
     // Write data
     for result in results {
-        writer.write_record(&[
+        writer.write_record([
             &result.id,
             &format!("{:.2}", result.baseline),
             &format!("{:.2}", result.followup),

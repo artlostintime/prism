@@ -29,18 +29,14 @@ pub struct NormativeData {
     pub severity_ranges: Vec<(String, f64, f64)>, // (label, min, max)
 }
 
+/// Available scale identifiers  
+const AVAILABLE_SCALES: &[&str] = &[
+    "PHQ-9", "GAD-7", "PSS-10", "PSS-14", "PANAS", "BDI-II", "BAI", "SWLS",
+];
+
 /// List all available pre-built scales
 pub fn list_available_scales() -> Vec<String> {
-    vec![
-        "PHQ-9".to_string(),
-        "GAD-7".to_string(),
-        "PSS-10".to_string(),
-        "PSS-14".to_string(),
-        "PANAS".to_string(),
-        "BDI-II".to_string(),
-        "BAI".to_string(),
-        "SWLS".to_string(),
-    ]
+    AVAILABLE_SCALES.iter().map(|&s| s.to_string()).collect()
 }
 
 /// Generate a config for a specific pre-built scale

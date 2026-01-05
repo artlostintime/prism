@@ -675,16 +675,8 @@ fn generate_consort_text(quality_report: &str, total: usize) -> String {
     let retained = total - excluded;
 
     // Calculate percentages safely (avoid division by zero)
-    let excluded_pct = if total > 0 {
-        (excluded as f64 / total as f64) * 100.0
-    } else {
-        0.0
-    };
-    let retained_pct = if total > 0 {
-        (retained as f64 / total as f64) * 100.0
-    } else {
-        0.0
-    };
+    let excluded_pct = prism::utils::calculate_percentage(excluded, total);
+    let retained_pct = prism::utils::calculate_percentage(retained, total);
 
     let mut output = String::new();
     output.push_str("CONSORT Participant Flow Report\n");
@@ -719,16 +711,8 @@ fn generate_consort_json(quality_report: &str, total: usize) -> String {
     let retained = total - excluded;
 
     // Calculate percentages safely (avoid division by zero)
-    let excluded_pct = if total > 0 {
-        (excluded as f64 / total as f64) * 100.0
-    } else {
-        0.0
-    };
-    let retained_pct = if total > 0 {
-        (retained as f64 / total as f64) * 100.0
-    } else {
-        0.0
-    };
+    let excluded_pct = prism::utils::calculate_percentage(excluded, total);
+    let retained_pct = prism::utils::calculate_percentage(retained, total);
 
     let issues_json: Vec<String> = issues
         .iter()
@@ -755,6 +739,29 @@ fn generate_consort_json(quality_report: &str, total: usize) -> String {
     )
 }
 
+// Helper: Map quality issue keywords to user-friendly descriptions
+fn map_issue_type(line: &str) -> Option<&'static str> {
+    if line.contains("missing") || line.contains("Missing") {
+        Some("Missing data")
+    } else if line.contains("straightlin") || line.contains("Straightlin") {
+        Some("Straightlining")
+    } else if line.contains("diagonal") || line.contains("Diagonal") {
+        Some("Diagonal pattern")
+    } else if line.contains("alternating") || line.contains("Alternating") {
+        Some("Alternating pattern")
+    } else if line.contains("block") || line.contains("Block") {
+        Some("Block pattern")
+    } else if line.contains("variance") || line.contains("Variance") {
+        Some("Low variance")
+    } else if line.contains("time") || line.contains("Time") {
+        Some("Response time")
+    } else if line.contains("semantic") || line.contains("Semantic") {
+        Some("Semantic inconsistency")
+    } else {
+        None
+    }
+}
+
 // Helper: Parse quality report for issues
 fn parse_quality_issues(quality_report: &str) -> (usize, Vec<(String, usize)>) {
     let mut excluded = 0;
@@ -764,24 +771,8 @@ fn parse_quality_issues(quality_report: &str) -> (usize, Vec<(String, usize)>) {
         if line.contains("flagged") || line.contains("detected") {
             excluded += 1;
 
-            if line.contains("missing") || line.contains("Missing") {
-                *issues.entry("Missing data".to_string()).or_insert(0) += 1;
-            } else if line.contains("straightlin") || line.contains("Straightlin") {
-                *issues.entry("Straightlining".to_string()).or_insert(0) += 1;
-            } else if line.contains("diagonal") || line.contains("Diagonal") {
-                *issues.entry("Diagonal pattern".to_string()).or_insert(0) += 1;
-            } else if line.contains("alternating") || line.contains("Alternating") {
-                *issues.entry("Alternating pattern".to_string()).or_insert(0) += 1;
-            } else if line.contains("block") || line.contains("Block") {
-                *issues.entry("Block pattern".to_string()).or_insert(0) += 1;
-            } else if line.contains("variance") || line.contains("Variance") {
-                *issues.entry("Low variance".to_string()).or_insert(0) += 1;
-            } else if line.contains("time") || line.contains("Time") {
-                *issues.entry("Response time".to_string()).or_insert(0) += 1;
-            } else if line.contains("semantic") || line.contains("Semantic") {
-                *issues
-                    .entry("Semantic inconsistency".to_string())
-                    .or_insert(0) += 1;
+            if let Some(issue_type) = map_issue_type(line) {
+                *issues.entry(issue_type.to_string()).or_insert(0) += 1;
             }
         }
     }

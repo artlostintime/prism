@@ -10,6 +10,7 @@ use prism::{
     scales,
     stats::Stats,
     types::{OutputFormat, QualityIssue},
+    utils,
     validation::{generate_config_template, validate_batch_file, validate_config},
     visualization, DEFAULT_QUALITY_FILE, DEFAULT_STATS_FILE, QUALITY_FLAG_OK,
     QUALITY_FLAG_SEPARATOR,
@@ -563,11 +564,7 @@ fn main() -> Result<()> {
                     println!("\n✓ RCI Analysis Complete");
                     println!("{}", "=".repeat(50));
                     println!("Total participants: {}", results.len());
-                    let reliable_pct = if results.is_empty() {
-                        0.0
-                    } else {
-                        (reliable_count as f64 / results.len() as f64) * 100.0
-                    };
+                    let reliable_pct = utils::calculate_percentage(reliable_count, results.len());
                     println!("Reliable change: {} ({:.1}%)", reliable_count, reliable_pct);
                     println!("  • Decreased: {}", improved_count);
                     println!("  • Increased: {}", worsened_count);
@@ -966,16 +963,8 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
         println!("✓ Processing Complete");
         println!("{}", "═".repeat(50));
         println!("Total Participants:  {}", processed_count);
-        let clean_pct = if processed_count > 0 {
-            (clean_count as f64 / processed_count as f64) * 100.0
-        } else {
-            0.0
-        };
-        let flagged_pct = if processed_count > 0 {
-            (flagged_count as f64 / processed_count as f64) * 100.0
-        } else {
-            0.0
-        };
+        let clean_pct = utils::calculate_percentage(clean_count, processed_count);
+        let flagged_pct = utils::calculate_percentage(flagged_count, processed_count);
         println!("Clean Records:       {} ({:.1}%)", clean_count, clean_pct);
         println!(
             "Flagged Records:     {} ({:.1}%)",

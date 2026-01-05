@@ -370,7 +370,7 @@ pub fn generate_spss_syntax(
             let reverse_marker = if scale_def
                 .reverse_scored
                 .as_ref()
-                .map_or(false, |rev| rev.contains(item))
+                .is_some_and(|rev| rev.contains(item))
             {
                 " (reverse scored)"
             } else {
@@ -1224,7 +1224,7 @@ pub fn generate_python_script(
     // Distribution plots
     let num_scales = config.scales.len();
     let ncols = if num_scales > 2 { 2 } else { num_scales };
-    let nrows = (num_scales + ncols - 1) / ncols;
+    let nrows = num_scales.div_ceil(ncols);
 
     writeln!(
         file,
@@ -1240,8 +1240,6 @@ pub fn generate_python_script(
     )?;
     if num_scales == 1 {
         writeln!(file, "axes = [axes]")?;
-    } else if nrows == 1 {
-        writeln!(file, "axes = axes.flatten()")?;
     } else {
         writeln!(file, "axes = axes.flatten()")?;
     }
@@ -1509,8 +1507,7 @@ pub fn generate_data_dictionary_json(config: &SurveyConfig, output_path: &str) -
     let id_col = config
         .survey
         .participant_id_column
-        .as_ref()
-        .map(|s| s.as_str())
+        .as_deref()
         .unwrap_or("ID");
 
     variables.push(json!({
@@ -1709,28 +1706,20 @@ pub fn generate_consort_report(
     let total_analyzed = total_screened.saturating_sub(total_excluded);
 
     // Calculate percentages safely (avoid division by zero)
-    let excluded_pct = if total_screened > 0 {
-        (total_excluded as f64 / total_screened as f64) * 100.0
-    } else {
-        0.0
-    };
-    let analyzed_pct = if total_screened > 0 {
-        (total_analyzed as f64 / total_screened as f64) * 100.0
-    } else {
-        0.0
-    };
+    let excluded_pct = crate::utils::calculate_percentage(total_excluded, total_screened);
+    let analyzed_pct = crate::utils::calculate_percentage(total_analyzed, total_screened);
 
     // Generate report
     let mut report = String::new();
     report.push_str("CONSORT Participant Flow Report\n");
     report.push_str("================================\n\n");
 
-    report.push_str(&format!("Participants Screened\n"));
+    report.push_str("Participants Screened\n");
     report.push_str(&format!("  n = {}\n\n", total_screened));
 
     report.push_str("  ↓\n\n");
 
-    report.push_str(&format!("Excluded (Quality Issues)\n"));
+    report.push_str("Excluded (Quality Issues)\n");
     report.push_str(&format!(
         "  n = {} ({:.1}%)\n\n",
         total_excluded, excluded_pct
@@ -1746,7 +1735,7 @@ pub fn generate_consort_report(
 
     report.push_str("\n  ↓\n\n");
 
-    report.push_str(&format!("Final Analysis Sample\n"));
+    report.push_str("Final Analysis Sample\n");
     report.push_str(&format!(
         "  n = {} ({:.1}%)\n\n",
         total_analyzed, analyzed_pct
@@ -1807,7 +1796,7 @@ pub fn generate_consort_json(
         *issue_counts.entry(category.to_string()).or_insert(0) += 1;
         participant_issues
             .entry(issue.participant_id.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(category.to_string());
     }
 
@@ -1815,16 +1804,8 @@ pub fn generate_consort_json(
     let total_analyzed = total_screened.saturating_sub(total_excluded);
 
     // Calculate percentages safely (avoid division by zero)
-    let excluded_pct = if total_screened > 0 {
-        (total_excluded as f64 / total_screened as f64) * 100.0
-    } else {
-        0.0
-    };
-    let analyzed_pct = if total_screened > 0 {
-        (total_analyzed as f64 / total_screened as f64) * 100.0
-    } else {
-        0.0
-    };
+    let excluded_pct = crate::utils::calculate_percentage(total_excluded, total_screened);
+    let analyzed_pct = crate::utils::calculate_percentage(total_analyzed, total_screened);
 
     // Build JSON structure
     let consort_data = json!({

@@ -410,6 +410,7 @@ pub fn check_block_pattern(
 ///     &mut flags, &mut issues
 /// );
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub fn check_semantic_inconsistency(
     scale1_name: &str,
     scale1_mean: f64,

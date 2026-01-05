@@ -41,6 +41,19 @@ pub const ISSUE_SLOW_RESPONSE: &str = "SlowResponse";
 /// Semantic inconsistency quality issue identifier
 pub const ISSUE_SEMANTIC_INCONSISTENCY: &str = "SemanticInconsistency";
 
+// Pattern Descriptions (for user-friendly display)
+/// Description for diagonal pattern detection
+pub const DESC_DIAGONAL_PATTERN: &str = "Sequential patterns (e.g., 1,2,3,4,5)";
+
+/// Description for alternating pattern detection
+pub const DESC_ALTERNATING_PATTERN: &str = "Alternating responses (e.g., 1,5,1,5)";
+
+/// Description for block pattern detection
+pub const DESC_BLOCK_PATTERN: &str = "Response blocks (e.g., all 1s then all 5s)";
+
+/// Description for straightlining detection
+pub const DESC_STRAIGHTLINING: &str = "Identical responses to all items";
+
 // Careless Responding Score Weights
 /// Weight for missing data in careless responding calculation
 pub const WEIGHT_MISSING_DATA: f64 = 0.3;

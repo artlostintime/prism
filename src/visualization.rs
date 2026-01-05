@@ -1,8 +1,13 @@
 // src/visualization.rs
 use crate::config::SurveyConfig;
+use crate::constants::{
+    DESC_ALTERNATING_PATTERN, DESC_BLOCK_PATTERN, DESC_DIAGONAL_PATTERN, DESC_STRAIGHTLINING,
+    ISSUE_ALTERNATING_PATTERN, ISSUE_BLOCK_PATTERN, ISSUE_DIAGONAL_PATTERN, ISSUE_STRAIGHTLINING,
+};
 use crate::errors::Result;
 use crate::stats::Stats;
 use crate::types::QualityIssue;
+use crate::utils::calculate_percentage;
 use std::collections::HashMap;
 use std::fs;
 
@@ -244,16 +249,8 @@ pub fn generate_html_report(
 "#,
     );
 
-    let clean_pct = if total_participants > 0 {
-        100.0 * clean_count as f64 / total_participants as f64
-    } else {
-        0.0
-    };
-    let flagged_pct = if total_participants > 0 {
-        100.0 * flagged_count as f64 / total_participants as f64
-    } else {
-        0.0
-    };
+    let clean_pct = calculate_percentage(clean_count, total_participants);
+    let flagged_pct = calculate_percentage(flagged_count, total_participants);
 
     html.push_str(&format!(
         r#"
@@ -520,10 +517,10 @@ pub fn generate_html_report(
             for pattern_type in pattern_types {
                 if let Some(&count) = issue_counts.get(pattern_type) {
                     let description = match pattern_type {
-                        "DiagonalPattern" => "Sequential patterns (e.g., 1,2,3,4,5)",
-                        "AlternatingPattern" => "Alternating responses (e.g., 1,5,1,5)",
-                        "BlockPattern" => "Response blocks (e.g., all 1s then all 5s)",
-                        "Straightlining" => "Identical responses to all items",
+                        ISSUE_DIAGONAL_PATTERN => DESC_DIAGONAL_PATTERN,
+                        ISSUE_ALTERNATING_PATTERN => DESC_ALTERNATING_PATTERN,
+                        ISSUE_BLOCK_PATTERN => DESC_BLOCK_PATTERN,
+                        ISSUE_STRAIGHTLINING => DESC_STRAIGHTLINING,
                         _ => pattern_type,
                     };
                     html.push_str(&format!(

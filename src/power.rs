@@ -234,6 +234,7 @@ fn inverse_normal_cdf(p: f64) -> f64 {
     }
 
     // Coefficients for Beasley-Springer-Moro algorithm
+    #[allow(clippy::excessive_precision)]
     let a = [
         -3.969683028665376e+01,
         2.209460984245205e+02,
