@@ -304,23 +304,31 @@ Enhanced quality validation with sophisticated pattern detection and comprehensi
 - ✅ Diagonal pattern detection (ascending/descending sequences like 1,2,3,4,5)
 - ✅ Alternating pattern detection (e.g., 1,5,1,5,1,5)
 - ✅ Block pattern detection (uniform response blocks)
+- ✅ Enhanced HTML reports with doughnut chart and pattern visualization
+- ✅ Data dictionary export (CSV/JSON formats)
 - ✅ 14 comprehensive pattern detection tests
 
 **In Development:**
 
 - 🔄 Semantic inconsistency checks (contradictory responses)
 - 🔄 CONSORT flowchart data generation
-- 🔄 Data dictionary export (CSV/JSON)
-- 🔄 Enhanced HTML reports with pattern visualization
 - 🔄 IP duplicate detection
 - 🔄 Bot detection patterns
 
 **Technical Implementation:**
 
 - New quality check functions in `src/quality.rs`
+- Data dictionary generators in `src/output.rs`
 - Integrated into processing pipeline
 - Pattern detection algorithms with configurable thresholds
 - Test suite: 149 tests (14 new pattern detection tests)
+
+**Data Dictionary Features:**
+
+- CSV and JSON export formats
+- Documents all variables (items, scales, quality flags)
+- Includes metadata: types, value ranges, reverse-scoring status
+- Perfect for data sharing and reproducibility
 
 ---
 

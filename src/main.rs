@@ -238,6 +238,21 @@ enum Commands {
         #[arg(short, long)]
         output: Option<String>,
     },
+
+    /// Generate data dictionary documenting dataset structure
+    Dictionary {
+        /// Path to the TOML configuration file
+        #[arg(short, long)]
+        config: String,
+
+        /// Output file path
+        #[arg(short, long)]
+        output: String,
+
+        /// Output format (csv or json)
+        #[arg(short, long, default_value = "csv")]
+        format: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -665,6 +680,50 @@ fn main() -> Result<()> {
                 }
                 Err(e) => {
                     eprintln!("Error in power analysis: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Dictionary {
+            config,
+            output,
+            format,
+        } => {
+            use prism::output::{generate_data_dictionary_csv, generate_data_dictionary_json};
+
+            // Load configuration
+            let config_content = match fs::read_to_string(&config) {
+                Ok(content) => content,
+                Err(e) => {
+                    eprintln!("Error reading config file '{}': {}", config, e);
+                    std::process::exit(1);
+                }
+            };
+
+            let survey_config: SurveyConfig = match toml::from_str(&config_content) {
+                Ok(cfg) => cfg,
+                Err(e) => {
+                    eprintln!("Error parsing TOML config from '{}': {}", config, e);
+                    std::process::exit(1);
+                }
+            };
+
+            // Generate dictionary based on format
+            let result = match format.to_lowercase().as_str() {
+                "csv" => generate_data_dictionary_csv(&survey_config, &output),
+                "json" => generate_data_dictionary_json(&survey_config, &output),
+                _ => {
+                    eprintln!("Error: Unknown format '{}'. Supported: csv, json", format);
+                    std::process::exit(1);
+                }
+            };
+
+            match result {
+                Ok(_) => {
+                    println!("✓ Data dictionary generated successfully: {}", output);
+                }
+                Err(e) => {
+                    eprintln!("Error generating data dictionary: {}", e);
                     std::process::exit(1);
                 }
             }

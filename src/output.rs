@@ -1400,3 +1400,242 @@ pub fn generate_python_script(
 
     Ok(())
 }
+
+/// Generate data dictionary in CSV format
+pub fn generate_data_dictionary_csv(config: &SurveyConfig, output_path: &str) -> Result<()> {
+    let mut file = fs::File::create(output_path)?;
+
+    // Write header
+    writeln!(
+        file,
+        "Variable,Description,Type,Scale_Membership,Value_Range,Reverse_Scored,Notes"
+    )?;
+
+    // Participant ID column
+    if let Some(id_col) = &config.survey.participant_id_column {
+        writeln!(
+            file,
+            "{},Participant identifier,ID,N/A,N/A,No,Unique identifier for each participant",
+            id_col
+        )?;
+    } else {
+        writeln!(
+            file,
+            "ID,Participant identifier,ID,N/A,N/A,No,Unique identifier for each participant"
+        )?;
+    }
+
+    // Individual item columns
+    for (scale_name, scale_def) in &config.scales {
+        for item in &scale_def.items {
+            let is_reverse = scale_def
+                .reverse_scored
+                .as_ref()
+                .map(|rs| rs.contains(item))
+                .unwrap_or(false);
+            let reverse_str = if is_reverse { "Yes" } else { "No" };
+
+            writeln!(
+                file,
+                "{},Survey item,Item,{},{}-{},{},Raw item response{}",
+                item,
+                scale_name,
+                config.survey.min_score,
+                config.survey.max_score,
+                reverse_str,
+                if is_reverse {
+                    " (will be reverse-scored)"
+                } else {
+                    ""
+                }
+            )?;
+        }
+    }
+
+    // Scale total columns
+    for (scale_name, scale_def) in &config.scales {
+        let reverse_count = scale_def
+            .reverse_scored
+            .as_ref()
+            .map(|rs| rs.len())
+            .unwrap_or(0);
+        let reverse_note = if reverse_count > 0 {
+            format!(" (after reverse-scoring {} items)", reverse_count)
+        } else {
+            String::new()
+        };
+
+        writeln!(
+            file,
+            "{}_total,Scale total score,Computed,{},Continuous,N/A,Sum of {} items{}",
+            scale_name,
+            scale_name,
+            scale_def.items.len(),
+            reverse_note
+        )?;
+    }
+
+    // Scale mean columns
+    for (scale_name, scale_def) in &config.scales {
+        writeln!(
+            file,
+            "{}_mean,Scale mean score,Computed,{},{}-{},N/A,Mean of {} items (total / {})",
+            scale_name,
+            scale_name,
+            config.survey.min_score,
+            config.survey.max_score,
+            scale_def.items.len(),
+            scale_def.items.len()
+        )?;
+    }
+
+    // Quality flag column
+    writeln!(
+        file,
+        "quality_flag,Quality control flags,Flag,Quality,Varies,N/A,Automated quality checks (OK if no issues)"
+    )?;
+
+    Ok(())
+}
+
+/// Generate data dictionary in JSON format
+pub fn generate_data_dictionary_json(config: &SurveyConfig, output_path: &str) -> Result<()> {
+    use serde_json::json;
+
+    let mut variables = Vec::new();
+
+    // Participant ID
+    let id_col = config
+        .survey
+        .participant_id_column
+        .as_ref()
+        .map(|s| s.as_str())
+        .unwrap_or("ID");
+
+    variables.push(json!({
+        "variable": id_col,
+        "description": "Participant identifier",
+        "type": "ID",
+        "scale_membership": null,
+        "value_range": null,
+        "reverse_scored": false,
+        "notes": "Unique identifier for each participant"
+    }));
+
+    // Individual items
+    for (scale_name, scale_def) in &config.scales {
+        for item in &scale_def.items {
+            let is_reverse = scale_def
+                .reverse_scored
+                .as_ref()
+                .map(|rs| rs.contains(item))
+                .unwrap_or(false);
+
+            variables.push(json!({
+                "variable": item,
+                "description": "Survey item",
+                "type": "Item",
+                "scale_membership": scale_name,
+                "value_range": format!("{}-{}", config.survey.min_score, config.survey.max_score),
+                "reverse_scored": is_reverse,
+                "notes": if is_reverse {
+                    "Raw item response (will be reverse-scored)"
+                } else {
+                    "Raw item response"
+                }
+            }));
+        }
+    }
+
+    // Scale totals
+    for (scale_name, scale_def) in &config.scales {
+        let reverse_count = scale_def
+            .reverse_scored
+            .as_ref()
+            .map(|rs| rs.len())
+            .unwrap_or(0);
+        let notes = if reverse_count > 0 {
+            format!(
+                "Sum of {} items (after reverse-scoring {} items)",
+                scale_def.items.len(),
+                reverse_count
+            )
+        } else {
+            format!("Sum of {} items", scale_def.items.len())
+        };
+
+        variables.push(json!({
+            "variable": format!("{}_total", scale_name),
+            "description": "Scale total score",
+            "type": "Computed",
+            "scale_membership": scale_name,
+            "value_range": "Continuous",
+            "reverse_scored": false,
+            "notes": notes
+        }));
+    }
+
+    // Scale means
+    for (scale_name, scale_def) in &config.scales {
+        variables.push(json!({
+            "variable": format!("{}_mean", scale_name),
+            "description": "Scale mean score",
+            "type": "Computed",
+            "scale_membership": scale_name,
+            "value_range": format!("{}-{}", config.survey.min_score, config.survey.max_score),
+            "reverse_scored": false,
+            "notes": format!("Mean of {} items (total / {})", scale_def.items.len(), scale_def.items.len())
+        }));
+    }
+
+    // Quality flag
+    variables.push(json!({
+        "variable": "quality_flag",
+        "description": "Quality control flags",
+        "type": "Flag",
+        "scale_membership": "Quality",
+        "value_range": "Varies",
+        "reverse_scored": false,
+        "notes": "Automated quality checks (OK if no issues)"
+    }));
+
+    // Create full data dictionary structure
+    let dictionary = json!({
+        "survey": {
+            "name": config.survey.name,
+            "min_score": config.survey.min_score,
+            "max_score": config.survey.max_score
+        },
+        "variables": variables,
+        "scales": config.scales.iter().map(|(name, def)| {
+            json!({
+                "name": name,
+                "items": def.items,
+                "reverse_scored": def.reverse_scored,
+                "item_count": def.items.len()
+            })
+        }).collect::<Vec<_>>(),
+        "quality_checks": if config.quality.is_some() {
+            json!({
+                "enabled": true,
+                "checks": [
+                    "Missing data detection",
+                    "Straightlining detection",
+                    "Low variance detection",
+                    "Diagonal pattern detection",
+                    "Alternating pattern detection",
+                    "Block pattern detection",
+                    "Response time validation"
+                ]
+            })
+        } else {
+            json!({ "enabled": false })
+        },
+        "generated": chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+    });
+
+    let json_string = serde_json::to_string_pretty(&dictionary)?;
+    fs::write(output_path, json_string)?;
+
+    Ok(())
+}

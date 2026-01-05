@@ -884,7 +884,97 @@ The HTML report includes:
 
 ---
 
-## 🔬 Reproducible Analysis Scripts (v0.6.0)
+## � Data Dictionary Export (NEW in v0.8.0!)
+
+Generate comprehensive documentation of your dataset variables to support reproducibility and data sharing!
+
+### Export Data Dictionary
+
+```bash
+# CSV format (default)
+prism dictionary --config study_config.toml --output data_dictionary.csv
+
+# JSON format for programmatic use
+prism dictionary --config study_config.toml --output data_dictionary.json --format json
+```
+
+### What's Included
+
+The data dictionary documents **all variables** in your output dataset:
+
+- ✅ **Participant ID** - Type, description, notes
+- ✅ **Individual Items** - Scale membership, value range, reverse-scoring status
+- ✅ **Scale Totals** - Item counts, reverse-scoring annotations
+- ✅ **Scale Means** - Value ranges, computation formulas
+- ✅ **Quality Flags** - Description of automated quality checks
+
+### CSV Format Example
+
+```csv
+Variable,Description,Type,Scale_Membership,Value_Range,Reverse_Scored,Notes
+ID,Participant identifier,ID,,,No,Unique identifier for each participant
+WAI_1,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_4,Survey item,Item,alliance_total,1-7,Yes,Raw item response (will be reverse-scored)
+alliance_total_total,Scale total score,Computed,alliance_total,Continuous,No,Sum of 12 items (after reverse-scoring 2 items)
+alliance_total_mean,Scale mean score,Computed,alliance_total,1-7,No,Mean of 12 items (total / 12)
+quality_flag,Quality control flags,Flag,Quality,Varies,No,Automated quality checks (OK if no issues)
+```
+
+### JSON Format Example
+
+```json
+{
+  "survey": {
+    "name": "Clinical Interactions & Trainee Well-Being",
+    "min_score": 1,
+    "max_score": 7
+  },
+  "variables": [
+    {
+      "variable": "WAI_4",
+      "description": "Survey item",
+      "type": "Item",
+      "scale_membership": "alliance_total",
+      "value_range": "1-7",
+      "reverse_scored": true,
+      "notes": "Raw item response (will be reverse-scored)"
+    }
+  ],
+  "scales": [
+    {
+      "name": "alliance_total",
+      "items": ["WAI_1", "WAI_2", ..., "WAI_12"],
+      "reverse_scored": ["WAI_4", "WAI_10"],
+      "item_count": 12
+    }
+  ],
+  "quality_checks": [
+    "Missing data detection",
+    "Straightlining detection",
+    ...
+  ]
+}
+```
+
+### Why Use Data Dictionaries?
+
+- **Reproducibility** - Document every variable for future reference
+- **Data Sharing** - Help collaborators understand your dataset
+- **Publications** - Include as supplementary material
+- **Compliance** - Meet funder/journal data documentation requirements
+- **Onboarding** - Help new team members understand data structure
+
+**Perfect for:**
+
+- Open science / data sharing initiatives
+- Pre-registration and registered reports
+- Grant proposals (data management plans)
+- Thesis/dissertation appendices
+- Collaborations with non-experts
+
+---
+
+## �🔬 Reproducible Analysis Scripts (v0.6.0)
 
 Generate complete, ready-to-run analysis scripts in R or Python with visualizations, reliability analysis, and publication-quality outputs!
 

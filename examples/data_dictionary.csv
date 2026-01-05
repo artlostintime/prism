@@ -1,0 +1,55 @@
+Variable,Description,Type,Scale_Membership,Value_Range,Reverse_Scored,Notes
+ID,Participant identifier,ID,N/A,N/A,No,Unique identifier for each participant
+WAI_1,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_2,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_3,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_4,Survey item,Item,alliance_total,1-7,Yes,Raw item response (will be reverse-scored)
+WAI_5,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_6,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_7,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_8,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_9,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_10,Survey item,Item,alliance_total,1-7,Yes,Raw item response (will be reverse-scored)
+WAI_11,Survey item,Item,alliance_total,1-7,No,Raw item response
+WAI_12,Survey item,Item,alliance_total,1-7,No,Raw item response
+Q10,Survey item,Item,depersonalization,1-7,No,Raw item response
+Q11,Survey item,Item,depersonalization,1-7,No,Raw item response
+Q12,Survey item,Item,depersonalization,1-7,No,Raw item response
+Q13,Survey item,Item,depersonalization,1-7,No,Raw item response
+Q14,Survey item,Item,depersonalization,1-7,No,Raw item response
+Q1,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q2,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q3,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q4,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q5,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q6,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q7,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q8,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+Q9,Survey item,Item,emotional_exhaustion,1-7,No,Raw item response
+MSPSS_1,Survey item,Item,peer_support,1-7,No,Raw item response
+MSPSS_2,Survey item,Item,peer_support,1-7,No,Raw item response
+MSPSS_3,Survey item,Item,peer_support,1-7,No,Raw item response
+MSPSS_4,Survey item,Item,peer_support,1-7,No,Raw item response
+SWAI_1,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_2,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_3,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_4,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_5,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_6,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_7,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_8,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_9,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_10,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_11,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+SWAI_12,Survey item,Item,supervision_rapport,1-7,No,Raw item response
+alliance_total_total,Scale total score,Computed,alliance_total,Continuous,N/A,Sum of 12 items (after reverse-scoring 2 items)
+depersonalization_total,Scale total score,Computed,depersonalization,Continuous,N/A,Sum of 5 items
+emotional_exhaustion_total,Scale total score,Computed,emotional_exhaustion,Continuous,N/A,Sum of 9 items
+peer_support_total,Scale total score,Computed,peer_support,Continuous,N/A,Sum of 4 items
+supervision_rapport_total,Scale total score,Computed,supervision_rapport,Continuous,N/A,Sum of 12 items
+alliance_total_mean,Scale mean score,Computed,alliance_total,1-7,N/A,Mean of 12 items (total / 12)
+depersonalization_mean,Scale mean score,Computed,depersonalization,1-7,N/A,Mean of 5 items (total / 5)
+emotional_exhaustion_mean,Scale mean score,Computed,emotional_exhaustion,1-7,N/A,Mean of 9 items (total / 9)
+peer_support_mean,Scale mean score,Computed,peer_support,1-7,N/A,Mean of 4 items (total / 4)
+supervision_rapport_mean,Scale mean score,Computed,supervision_rapport,1-7,N/A,Mean of 12 items (total / 12)
+quality_flag,Quality control flags,Flag,Quality,Varies,N/A,Automated quality checks (OK if no issues)
