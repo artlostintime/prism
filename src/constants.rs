@@ -1,0 +1,52 @@
+// src/constants.rs
+//! Central repository for all constants used throughout the application
+
+/// Floating point comparison epsilon for quality checks
+pub const FLOAT_EPSILON: f64 = 1e-10;
+
+/// Default number of bins for histogram generation
+pub const DEFAULT_HISTOGRAM_BINS: usize = 15;
+
+/// Minimum items required for pattern detection
+pub const MIN_PATTERN_ITEMS: usize = 4;
+
+/// Minimum items required for block pattern detection
+pub const MIN_BLOCK_ITEMS: usize = 6;
+
+// Quality Issue Type Constants
+/// Missing data quality issue identifier
+pub const ISSUE_MISSING_DATA: &str = "MissingData";
+
+/// Straightlining quality issue identifier
+pub const ISSUE_STRAIGHTLINING: &str = "Straightlining";
+
+/// Diagonal pattern quality issue identifier
+pub const ISSUE_DIAGONAL_PATTERN: &str = "DiagonalPattern";
+
+/// Alternating pattern quality issue identifier
+pub const ISSUE_ALTERNATING_PATTERN: &str = "AlternatingPattern";
+
+/// Block pattern quality issue identifier
+pub const ISSUE_BLOCK_PATTERN: &str = "BlockPattern";
+
+/// Low variance quality issue identifier
+pub const ISSUE_LOW_VARIANCE: &str = "LowVariance";
+
+/// Fast response time quality issue identifier
+pub const ISSUE_FAST_RESPONSE: &str = "FastResponse";
+
+/// Slow response time quality issue identifier
+pub const ISSUE_SLOW_RESPONSE: &str = "SlowResponse";
+
+/// Semantic inconsistency quality issue identifier
+pub const ISSUE_SEMANTIC_INCONSISTENCY: &str = "SemanticInconsistency";
+
+// Careless Responding Score Weights
+/// Weight for missing data in careless responding calculation
+pub const WEIGHT_MISSING_DATA: f64 = 0.3;
+
+/// Weight for straightlining in careless responding calculation
+pub const WEIGHT_STRAIGHTLINING: f64 = 0.5;
+
+/// Weight for low variance in careless responding calculation
+pub const WEIGHT_LOW_VARIANCE: f64 = 0.2;

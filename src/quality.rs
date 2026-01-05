@@ -1,9 +1,20 @@
 // src/quality.rs
 use crate::config::SurveyConfig;
+use crate::constants::*;
 use crate::types::{MissingPercent, QualityIssue};
 
-/// Constants for quality checks
-const FLOAT_EPSILON: f64 = 1e-10;
+/// Helper function to add quality issues (reduces duplication)
+#[inline]
+fn add_quality_issue(
+    participant_id: &str,
+    issue_type: &str,
+    description: String,
+    quality_flags: &mut Vec<String>,
+    quality_issues: &mut Vec<QualityIssue>,
+) {
+    quality_flags.push(description.clone());
+    quality_issues.push(QualityIssue::new(participant_id, issue_type, description));
+}
 
 /// Check for missing data issues
 ///
@@ -28,13 +39,18 @@ pub fn check_missing_data(
 
     if let Some(quality_settings) = &config.quality {
         if missing_percent.get() > quality_settings.max_missing_percent {
-            let issue = format!(
+            let description = format!(
                 "High missing data: {} ({:.1}% missing)",
                 scale_name,
                 missing_percent.as_percentage()
             );
-            quality_flags.push(issue.clone());
-            quality_issues.push(QualityIssue::new(participant_id, "MissingData", issue));
+            add_quality_issue(
+                participant_id,
+                ISSUE_MISSING_DATA,
+                description,
+                quality_flags,
+                quality_issues,
+            );
         }
     }
 }
@@ -71,9 +87,14 @@ pub fn check_straightlining(
             .iter()
             .all(|&x| (x - first).abs() < FLOAT_EPSILON)
         {
-            let issue = format!("Straightlining: {}", scale_name);
-            quality_flags.push(issue.clone());
-            quality_issues.push(QualityIssue::new(participant_id, "Straightlining", issue));
+            let description = format!("Straightlining: {}", scale_name);
+            add_quality_issue(
+                participant_id,
+                ISSUE_STRAIGHTLINING,
+                description,
+                quality_flags,
+                quality_issues,
+            );
         }
     }
 }
@@ -114,9 +135,15 @@ pub fn check_low_variance(
                 / (n - 1.0);
 
             if variance < min_variance {
-                let issue = format!("Low variance: {} (variance={:.3})", scale_name, variance);
-                quality_flags.push(issue.clone());
-                quality_issues.push(QualityIssue::new(participant_id, "LowVariance", issue));
+                let description =
+                    format!("Low variance: {} (variance={:.3})", scale_name, variance);
+                add_quality_issue(
+                    participant_id,
+                    ISSUE_LOW_VARIANCE,
+                    description,
+                    quality_flags,
+                    quality_issues,
+                );
             }
         }
     }
@@ -140,23 +167,33 @@ pub fn check_response_time(
     if let Some(quality_settings) = &config.quality {
         if let Some(max_time) = quality_settings.max_response_time {
             if response_time > max_time {
-                let issue = format!(
+                let description = format!(
                     "Slow response time: {:.1} seconds (max: {})",
                     response_time, max_time
                 );
-                quality_flags.push(issue.clone());
-                quality_issues.push(QualityIssue::new(participant_id, "SlowResponse", issue));
+                add_quality_issue(
+                    participant_id,
+                    ISSUE_SLOW_RESPONSE,
+                    description,
+                    quality_flags,
+                    quality_issues,
+                );
             }
         }
 
         if let Some(min_time) = quality_settings.min_response_time {
             if response_time < min_time {
-                let issue = format!(
+                let description = format!(
                     "Fast response time: {:.1} seconds (min: {})",
                     response_time, min_time
                 );
-                quality_flags.push(issue.clone());
-                quality_issues.push(QualityIssue::new(participant_id, "FastResponse", issue));
+                add_quality_issue(
+                    participant_id,
+                    ISSUE_FAST_RESPONSE,
+                    description,
+                    quality_flags,
+                    quality_issues,
+                );
             }
         }
     }
@@ -173,16 +210,16 @@ pub fn calculate_careless_score(
     let mut score = 0.0;
 
     // Weight missing data
-    score += missing_percent * 0.3;
+    score += missing_percent * WEIGHT_MISSING_DATA;
 
     // Weight straightlining
     if has_straightlining {
-        score += 0.5;
+        score += WEIGHT_STRAIGHTLINING;
     }
 
     // Weight low variance (normalize to 0-1, assuming typical variance is around 1.0)
     let variance_score = (1.0 - variance.min(1.0)).max(0.0);
-    score += variance_score * 0.2;
+    score += variance_score * WEIGHT_LOW_VARIANCE;
 
     score
 }
@@ -220,9 +257,14 @@ pub fn check_diagonal_pattern(
 
     if ascending || descending {
         let pattern_type = if ascending { "ascending" } else { "descending" };
-        let issue = format!("Diagonal pattern ({}): {}", pattern_type, scale_name);
-        quality_flags.push(issue.clone());
-        quality_issues.push(QualityIssue::new(participant_id, "DiagonalPattern", issue));
+        let description = format!("Diagonal pattern ({}): {}", pattern_type, scale_name);
+        add_quality_issue(
+            participant_id,
+            ISSUE_DIAGONAL_PATTERN,
+            description,
+            quality_flags,
+            quality_issues,
+        );
     }
 }
 
@@ -266,16 +308,17 @@ pub fn check_alternating_pattern(
             .all(|w| (w[0] - w[2]).abs() < FLOAT_EPSILON && (w[0] - w[1]).abs() > FLOAT_EPSILON);
 
         if alternates {
-            let issue = format!(
+            let description = format!(
                 "Alternating pattern ({:.0},{:.0}): {}",
                 unique_values[0], unique_values[1], scale_name
             );
-            quality_flags.push(issue.clone());
-            quality_issues.push(QualityIssue::new(
+            add_quality_issue(
                 participant_id,
-                "AlternatingPattern",
-                issue,
-            ));
+                ISSUE_ALTERNATING_PATTERN,
+                description,
+                quality_flags,
+                quality_issues,
+            );
         }
     }
 }
@@ -317,12 +360,17 @@ pub fn check_block_pattern(
 
     // Block pattern if both halves are uniform and different
     if first_uniform && second_uniform && (first_value - second_value).abs() > FLOAT_EPSILON {
-        let issue = format!(
+        let description = format!(
             "Block pattern ({:.0} then {:.0}): {}",
             first_value, second_value, scale_name
         );
-        quality_flags.push(issue.clone());
-        quality_issues.push(QualityIssue::new(participant_id, "BlockPattern", issue));
+        add_quality_issue(
+            participant_id,
+            ISSUE_BLOCK_PATTERN,
+            description,
+            quality_flags,
+            quality_issues,
+        );
     }
 }
 
@@ -395,7 +443,7 @@ pub fn check_semantic_inconsistency(
     };
 
     if is_inconsistent {
-        let issue = format!(
+        let description = format!(
             "Semantic inconsistency: {} ({:.2}) and {} ({:.2}) show unexpected pattern (expected {} correlation)",
             scale1_name,
             scale1_mean,
@@ -403,12 +451,13 @@ pub fn check_semantic_inconsistency(
             scale2_mean,
             expected_correlation
         );
-        quality_flags.push(issue.clone());
-        quality_issues.push(QualityIssue::new(
+        add_quality_issue(
             participant_id,
-            "SemanticInconsistency",
-            issue,
-        ));
+            ISSUE_SEMANTIC_INCONSISTENCY,
+            description,
+            quality_flags,
+            quality_issues,
+        );
     }
 }
 

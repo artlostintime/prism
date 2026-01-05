@@ -25,6 +25,7 @@
 //! ```
 
 pub mod config;
+pub mod constants;
 pub mod errors;
 pub mod longitudinal;
 pub mod output;
@@ -34,6 +35,7 @@ pub mod quality;
 pub mod scales;
 pub mod stats;
 pub mod types;
+pub mod utils;
 pub mod validation;
 pub mod visualization;
 
