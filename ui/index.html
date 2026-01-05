@@ -15,9 +15,28 @@
         --info: #4299e1;
         --bg-light: #f7fafc;
         --bg-dark: #2d3748;
+        --bg-card: #ffffff;
+        --bg-body: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
         --text: #2d3748;
         --text-light: #718096;
         --border: #e2e8f0;
+        --shadow: rgba(0, 0, 0, 0.3);
+      }
+
+      /* Dark Mode Theme */
+      body.dark-mode {
+        --bg-light: #1a202c;
+        --bg-dark: #2d3748;
+        --bg-card: #2d3748;
+        --bg-body: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        --text: #e2e8f0;
+        --text-light: #a0aec0;
+        --border: #4a5568;
+        --shadow: rgba(0, 0, 0, 0.6);
       }
 
       * {
@@ -27,26 +46,23 @@
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           "Helvetica Neue", Arial, sans-serif;
-        background: linear-gradient(
-          135deg,
-          var(--primary) 0%,
-          var(--secondary) 100%
-        );
+        background: var(--bg-body);
         display: flex;
         justify-content: center;
         align-items: center;
         min-height: 100vh;
         margin: 0;
         padding: 20px;
+        transition: background 0.3s ease, color 0.3s ease;
       }
 
       .container {
-        background: white;
+        background: var(--bg-card);
         padding: 2.5rem;
         border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 60px var(--shadow);
         width: 100%;
-        max-width: 700px;
+        max-width: 800px;
         animation: slideIn 0.3s ease-out;
       }
 
@@ -101,6 +117,55 @@
       .help-btn:hover {
         background: var(--border);
         transform: scale(1.1);
+      }
+
+      /* Theme Toggle */
+      .theme-toggle {
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .theme-toggle:hover {
+        background: var(--border);
+        transform: scale(1.05);
+      }
+
+      /* Collapsible Sections */
+      .section-collapsible {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .section-collapsible::before {
+        content: "▼";
+        display: inline-block;
+        margin-right: 0.5rem;
+        transition: transform 0.2s;
+        font-size: 0.8rem;
+      }
+
+      .section-collapsible.collapsed::before {
+        transform: rotate(-90deg);
+      }
+
+      .section-content {
+        max-height: 1000px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        opacity: 1;
+      }
+
+      .section-content.collapsed {
+        max-height: 0;
+        opacity: 0;
       }
 
       /* Sections */
@@ -686,9 +751,18 @@
             Psychology Survey Data Processor with Advanced Quality Checks
           </p>
         </div>
-        <button class="help-btn" onclick="showHelp()" title="Help & Examples">
-          ❓
-        </button>
+        <div style="display: flex; gap: 0.5rem; align-items: center">
+          <button
+            class="theme-toggle"
+            onclick="toggleTheme()"
+            title="Toggle Dark Mode"
+          >
+            <span id="themeIcon">🌙</span>
+          </button>
+          <button class="help-btn" onclick="showHelp()" title="Help & Examples">
+            ❓
+          </button>
+        </div>
       </div>
 
       <!-- CSV File Section -->
@@ -800,6 +874,145 @@
           >
             📁
           </button>
+        </div>
+      </div>
+
+      <!-- Output Options Section -->
+      <div class="section">
+        <div class="section-header">
+          <label
+            class="section-label section-collapsible"
+            onclick="toggleSection('outputOptions')"
+          >
+            <span>⚙️ Output Options</span>
+            <span class="tooltip">
+              ⓘ
+              <span class="tooltip-text">
+                Choose output formats and report types. Multiple formats can be
+                generated simultaneously.
+              </span>
+            </span>
+          </label>
+        </div>
+        <div id="outputOptions" class="section-content">
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 0.75rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--bg-light);
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="outputCSV"
+                checked
+                onchange="updateProcessButton()"
+              />
+              <span style="font-size: 0.9rem">📊 CSV File</span>
+            </label>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--bg-light);
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="outputExcel"
+                onchange="updateProcessButton()"
+              />
+              <span style="font-size: 0.9rem">📗 Excel File</span>
+            </label>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--bg-light);
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="outputSPSS"
+                onchange="updateProcessButton()"
+              />
+              <span style="font-size: 0.9rem">📘 SPSS Syntax</span>
+            </label>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--bg-light);
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="outputR"
+                onchange="updateProcessButton()"
+              />
+              <span style="font-size: 0.9rem">📙 R Script</span>
+            </label>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--bg-light);
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="outputPython"
+                onchange="updateProcessButton()"
+              />
+              <span style="font-size: 0.9rem">🐍 Python Script</span>
+            </label>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--bg-light);
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="outputHTML"
+                onchange="updateProcessButton()"
+              />
+              <span style="font-size: 0.9rem">🌐 HTML Report</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -940,6 +1153,23 @@
       </div>
     </div>
 
+    <!-- Scale Library Browser Modal -->
+    <div id="scaleBrowserModal" class="modal">
+      <div class="modal-content" style="max-width: 700px">
+        <div class="modal-header">
+          <h2 style="margin: 0">📚 Scale Library Browser</h2>
+          <button class="modal-close" onclick="closeScaleBrowser()">×</button>
+        </div>
+        <div id="scaleDetails" style="margin-top: 1rem">
+          <p
+            style="color: var(--text-light); text-align: center; padding: 2rem"
+          >
+            Select a scale from the configuration templates to view details
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Examples Modal -->
     <div id="examplesModal" class="modal">
       <div class="modal-content">
@@ -966,8 +1196,24 @@
           "
         >
           Ready-to-use configs for validated instruments with citations
+          <button
+            onclick="showScaleBrowser()"
+            style="
+              margin-left: 0.5rem;
+              padding: 0.25rem 0.5rem;
+              border: 1px solid var(--primary);
+              background: none;
+              color: var(--primary);
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 0.8rem;
+            "
+          >
+            📚 Browse All
+          </button>
         </p>
         <div class="examples-grid" id="scalesGrid" style="margin-bottom: 2rem">
+          >
           <!-- Dynamically loaded from Rust -->
           <div
             style="
@@ -1429,10 +1675,36 @@
           progressText.textContent = "Processing data...";
           progressFill.style.width = "50%";
 
-          const result = await window.__TAURI__.core.invoke("run_analysis", {
-            inputPath: csvFilePath,
-            configPath: configToUse,
-          });
+          // Collect selected output formats
+          const formats = [];
+          if (document.getElementById("outputCSV").checked) formats.push("csv");
+          if (document.getElementById("outputExcel").checked)
+            formats.push("excel");
+          if (document.getElementById("outputSPSS").checked)
+            formats.push("spss");
+          if (document.getElementById("outputR").checked) formats.push("r");
+          if (document.getElementById("outputPython").checked)
+            formats.push("python");
+          if (document.getElementById("outputHTML").checked)
+            formats.push("html");
+
+          // Use multi-format if multiple formats selected, otherwise use standard
+          let result;
+          if (formats.length > 1 || formats.some((f) => f !== "csv")) {
+            result = await window.__TAURI__.core.invoke(
+              "run_analysis_multi_format",
+              {
+                inputPath: csvFilePath,
+                configPath: configToUse,
+                formats: formats,
+              }
+            );
+          } else {
+            result = await window.__TAURI__.core.invoke("run_analysis", {
+              inputPath: csvFilePath,
+              configPath: configToUse,
+            });
+          }
 
           progressFill.style.width = "100%";
           progressText.textContent = "Complete!";
@@ -1805,6 +2077,131 @@ For more info, check the documentation folder.`);
           showStatus(`CONSORT generation failed:\n\n${error}`, "error");
         }
       }
+
+      // NEW FEATURES - QoL Improvements
+
+      // Theme Toggle
+      function toggleTheme() {
+        const body = document.body;
+        const icon = document.getElementById("themeIcon");
+
+        if (body.classList.contains("dark-mode")) {
+          body.classList.remove("dark-mode");
+          icon.textContent = "🌙";
+          localStorage.setItem("theme", "light");
+        } else {
+          body.classList.add("dark-mode");
+          icon.textContent = "☀️";
+          localStorage.setItem("theme", "dark");
+        }
+      }
+
+      // Load saved theme on init
+      function loadTheme() {
+        const savedTheme = localStorage.getItem("theme");
+        const icon = document.getElementById("themeIcon");
+
+        if (savedTheme === "dark") {
+          document.body.classList.add("dark-mode");
+          icon.textContent = "☀️";
+        }
+      }
+
+      // Collapsible sections
+      function toggleSection(sectionId) {
+        const content = document.getElementById(sectionId);
+        const label = event.currentTarget;
+
+        if (content.classList.contains("collapsed")) {
+          content.classList.remove("collapsed");
+          label.classList.remove("collapsed");
+        } else {
+          content.classList.add("collapsed");
+          label.classList.add("collapsed");
+        }
+      }
+
+      // Scale Browser
+      function showScaleBrowser() {
+        document.getElementById("scaleBrowserModal").classList.add("show");
+        loadAllScalesInfo();
+      }
+
+      function closeScaleBrowser() {
+        document.getElementById("scaleBrowserModal").classList.remove("show");
+      }
+
+      async function loadAllScalesInfo() {
+        try {
+          const scales = await window.__TAURI__.core.invoke(
+            "get_available_scales"
+          );
+          const detailsDiv = document.getElementById("scaleDetails");
+
+          if (scales && scales.length > 0) {
+            let html = '<div style="display: grid; gap: 1rem;">';
+
+            for (const scaleName of scales) {
+              try {
+                const infoJson = await window.__TAURI__.core.invoke(
+                  "get_scale_info",
+                  { scaleId: scaleName }
+                );
+                const info = JSON.parse(infoJson);
+
+                html += `
+                  <div style="border: 1px solid var(--border); border-radius: 8px; padding: 1rem; background: var(--bg-light);">
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--primary);">${
+                      info.full_name || scaleName
+                    }</h4>
+                    <p style="font-size: 0.85rem; color: var(--text); margin-bottom: 0.5rem;">${
+                      info.description || "No description available"
+                    }</p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.5rem 0; font-size: 0.8rem;">
+                      <div><strong>Items:</strong> ${
+                        info.num_items || "N/A"
+                      }</div>
+                      <div><strong>Range:</strong> ${info.min_score}-${
+                  info.max_score
+                }</div>
+                      ${
+                        info.citation
+                          ? `<div style="grid-column: 1 / -1;"><strong>Citation:</strong> ${info.citation}</div>`
+                          : ""
+                      }
+                    </div>
+                    <button 
+                      onclick="loadScale('${scaleName}')" 
+                      style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;"
+                    >
+                      📥 Load Configuration
+                    </button>
+                  </div>
+                `;
+              } catch (err) {
+                console.error(`Failed to load info for ${scaleName}:`, err);
+              }
+            }
+
+            html += "</div>";
+            detailsDiv.innerHTML = html;
+          } else {
+            detailsDiv.innerHTML =
+              '<p style="color: var(--text-light); text-align: center; padding: 2rem;">No scales available</p>';
+          }
+        } catch (error) {
+          console.error("Failed to load scale information:", error);
+          document.getElementById(
+            "scaleDetails"
+          ).innerHTML = `<p style="color: var(--error); text-align: center; padding: 2rem;">Failed to load scales: ${error}</p>`;
+        }
+      }
+
+      // Enhanced initialization
+      (async function () {
+        loadTheme();
+        await init();
+      })();
     </script>
   </body>
 </html>

@@ -327,7 +327,207 @@ fn generate_scale_config(scale_id: String) -> Result<String, String> {
     prism::scales::generate_scale_config(&scale_id).map_err(|e| e.to_string())
 }
 
-// COMMAND 11: Generate Data Dictionary (v0.8.0)
+// COMMAND 11: Generate multiple output formats
+#[command]
+fn run_analysis_multi_format(
+    input_path: String,
+    config_path: String,
+    formats: Vec<String>, // "csv", "excel", "spss", "r", "python", "html"
+) -> Result<String, String> {
+    let input_path_obj = Path::new(&input_path);
+    let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
+
+    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("target")
+        .join("release")
+        .join(cli_name);
+
+    let cli_path = if cli_path.exists() {
+        cli_path
+    } else {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("target")
+            .join("debug")
+            .join(cli_name)
+    };
+
+    if !cli_path.exists() {
+        return Err(format!(
+            "CLI binary not found at {:?}\n\nPlease build first: cargo build --release",
+            cli_path
+        ));
+    }
+
+    let output_folder = determine_output_folder(input_path_obj);
+    fs::create_dir_all(&output_folder)
+        .map_err(|e| format!("Could not create output folder: {}", e))?;
+
+    let mut generated_files = Vec::new();
+    let mut errors = Vec::new();
+
+    // Process each format
+    for format in formats {
+        match format.as_str() {
+            "csv" => {
+                let output_path = output_folder.join("clean_data.csv");
+                let result = Command::new(&cli_path)
+                    .arg("process")
+                    .arg("--input")
+                    .arg(&input_path)
+                    .arg("--config")
+                    .arg(&config_path)
+                    .arg("--output")
+                    .arg(&output_path)
+                    .output();
+
+                match result {
+                    Ok(out) if out.status.success() => generated_files.push("clean_data.csv"),
+                    _ => errors.push("CSV generation failed"),
+                }
+            }
+            "excel" => {
+                let output_path = output_folder.join("clean_data.xlsx");
+                let result = Command::new(&cli_path)
+                    .arg("process")
+                    .arg("--input")
+                    .arg(&input_path)
+                    .arg("--config")
+                    .arg(&config_path)
+                    .arg("--output")
+                    .arg(&output_path)
+                    .arg("--format")
+                    .arg("excel")
+                    .output();
+
+                match result {
+                    Ok(out) if out.status.success() => generated_files.push("clean_data.xlsx"),
+                    _ => errors.push("Excel generation failed"),
+                }
+            }
+            "spss" => {
+                let output_path = output_folder.join("clean_data.sps");
+                let result = Command::new(&cli_path)
+                    .arg("process")
+                    .arg("--input")
+                    .arg(&input_path)
+                    .arg("--config")
+                    .arg(&config_path)
+                    .arg("--output")
+                    .arg(&output_path)
+                    .arg("--format")
+                    .arg("spss")
+                    .output();
+
+                match result {
+                    Ok(out) if out.status.success() => generated_files.push("clean_data.sps"),
+                    _ => errors.push("SPSS generation failed"),
+                }
+            }
+            "r" => {
+                let output_path = output_folder.join("analysis_script.R");
+                let result = Command::new(&cli_path)
+                    .arg("process")
+                    .arg("--input")
+                    .arg(&input_path)
+                    .arg("--config")
+                    .arg(&config_path)
+                    .arg("--output")
+                    .arg(&output_path)
+                    .arg("--format")
+                    .arg("r")
+                    .output();
+
+                match result {
+                    Ok(out) if out.status.success() => generated_files.push("analysis_script.R"),
+                    _ => errors.push("R script generation failed"),
+                }
+            }
+            "python" => {
+                let output_path = output_folder.join("analysis_script.py");
+                let result = Command::new(&cli_path)
+                    .arg("process")
+                    .arg("--input")
+                    .arg(&input_path)
+                    .arg("--config")
+                    .arg(&config_path)
+                    .arg("--output")
+                    .arg(&output_path)
+                    .arg("--format")
+                    .arg("python")
+                    .output();
+
+                match result {
+                    Ok(out) if out.status.success() => generated_files.push("analysis_script.py"),
+                    _ => errors.push("Python script generation failed"),
+                }
+            }
+            "html" => {
+                let output_path = output_folder.join("report.html");
+                let result = Command::new(&cli_path)
+                    .arg("process")
+                    .arg("--input")
+                    .arg(&input_path)
+                    .arg("--config")
+                    .arg(&config_path)
+                    .arg("--output")
+                    .arg(&output_path)
+                    .arg("--format")
+                    .arg("html-report")
+                    .output();
+
+                match result {
+                    Ok(out) if out.status.success() => generated_files.push("report.html"),
+                    _ => errors.push("HTML report generation failed"),
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Always generate stats and quality reports
+    let stats_path = output_folder.join("summary_stats.txt");
+    let quality_path = output_folder.join("quality_report.txt");
+
+    let _ = Command::new(&cli_path)
+        .arg("process")
+        .arg("--input")
+        .arg(&input_path)
+        .arg("--config")
+        .arg(&config_path)
+        .arg("--output")
+        .arg(output_folder.join("temp.csv"))
+        .arg("--stats-output")
+        .arg(&stats_path)
+        .arg("--quality-report")
+        .arg(&quality_path)
+        .output();
+
+    if generated_files.is_empty() && !errors.is_empty() {
+        return Err(format!("All formats failed:\n{}", errors.join("\n")));
+    }
+
+    let mut result = format!(
+        "✅ Success! Generated {} file(s):\n\n",
+        generated_files.len()
+    );
+    for file in &generated_files {
+        result.push_str(&format!("  • {}\n", file));
+    }
+    result.push_str(&format!("\n📁 Output folder:\n{}", output_folder.display()));
+
+    if !errors.is_empty() {
+        result.push_str(&format!(
+            "\n\n⚠️ Some formats failed:\n{}",
+            errors.join("\n")
+        ));
+    }
+
+    Ok(result)
+}
+
+// COMMAND 12: Generate Data Dictionary (v0.8.0)
 #[command]
 fn run_dictionary(
     config_path: String,
@@ -578,6 +778,7 @@ pub fn run() {
             generate_config_template,
             save_config_text,
             run_analysis,
+            run_analysis_multi_format,
             get_csv_info,
             open_folder,
             get_available_scales,
