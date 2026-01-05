@@ -15,6 +15,9 @@ pub enum ProcessingError {
     #[error("Feature not yet implemented: {0}")]
     NotImplemented(String),
 
+    #[error("{0}")]
+    Custom(String),
+
     #[error("Data error at row {row}: {message}")]
     DataError { row: usize, message: String },
 

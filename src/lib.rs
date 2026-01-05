@@ -28,6 +28,7 @@ pub mod config;
 pub mod errors;
 pub mod longitudinal;
 pub mod output;
+pub mod power;
 pub mod processor;
 pub mod quality;
 pub mod scales;

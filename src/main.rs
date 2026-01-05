@@ -206,6 +206,37 @@ enum Commands {
         #[arg(short, long)]
         output: String,
     },
+
+    /// Statistical power analysis for study planning
+    Power {
+        /// Test type (independent-t, paired-t, one-sample-t, correlation)
+        #[arg(short, long)]
+        test: String,
+
+        /// Effect size (Cohen's d for t-tests, r for correlation)
+        #[arg(short, long)]
+        effect_size: f64,
+
+        /// Significance level (alpha)
+        #[arg(short, long, default_value = "0.05")]
+        alpha: f64,
+
+        /// Desired statistical power (for a priori, default 0.80)
+        #[arg(short = 'p', long)]
+        power: Option<f64>,
+
+        /// Sample size (for post-hoc power calculation)
+        #[arg(short = 'n', long)]
+        sample_size: Option<usize>,
+
+        /// Number of tails (1 or 2)
+        #[arg(long, default_value = "2")]
+        tails: u8,
+
+        /// Output file path (optional, prints to console if not specified)
+        #[arg(short, long)]
+        output: Option<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -527,6 +558,112 @@ fn main() -> Result<()> {
                 }
                 Err(e) => {
                     eprintln!("Error calculating RCI: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Power {
+            test,
+            effect_size,
+            alpha,
+            power,
+            sample_size,
+            tails,
+            output,
+        } => {
+            use prism::power::{
+                calculate_observed_power, calculate_sample_size, interpret_effect_size,
+                APrioriParams, PostHocParams, TestType,
+            };
+
+            // Parse test type
+            let test_type = match test.to_lowercase().as_str() {
+                "independent-t" | "indep-t" | "independent" => TestType::IndependentT,
+                "paired-t" | "paired" => TestType::PairedT,
+                "one-sample-t" | "one-sample" => TestType::OneSampleT,
+                "correlation" | "corr" | "r" => TestType::Correlation,
+                _ => {
+                    eprintln!(
+                        "Error: Unknown test type '{}'. Supported: independent-t, paired-t, one-sample-t, correlation",
+                        test
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            // Determine if this is a priori or post-hoc
+            let result = if let Some(n) = sample_size {
+                // Post-hoc: Calculate observed power from sample size
+                info!("Calculating observed power for {} with n={}", test, n);
+
+                let params = PostHocParams {
+                    test_type: test_type.clone(),
+                    effect_size,
+                    sample_size: n,
+                    alpha,
+                    tails,
+                };
+
+                calculate_observed_power(&params)
+            } else if let Some(desired_power) = power {
+                // A priori: Calculate required sample size
+                info!(
+                    "Calculating required sample size for {} with power={}",
+                    test, desired_power
+                );
+
+                let params = APrioriParams {
+                    test_type: test_type.clone(),
+                    effect_size,
+                    alpha,
+                    power: desired_power,
+                    tails,
+                };
+
+                calculate_sample_size(&params)
+            } else {
+                eprintln!("Error: Must specify either --power (for sample size calculation) or --sample-size (for power calculation)");
+                std::process::exit(1);
+            };
+
+            match result {
+                Ok(r) => {
+                    let effect_interpretation = interpret_effect_size(&test_type, effect_size);
+
+                    // Format output
+                    let output_text = format!(
+                        "\n{}\nPower Analysis Results\n{}\n\nTest Type:       {}\nEffect Size:     {:.3} ({})\nAlpha:           {:.3}\nTails:           {}\nSample Size:     {}\nPower:           {:.3} ({:.1}%)\n\nCritical Value:  {:.3}\n{}\n{}\n",
+                        "=".repeat(60),
+                        "=".repeat(60),
+                        r.test_type,
+                        r.effect_size,
+                        effect_interpretation,
+                        r.alpha,
+                        tails,
+                        r.sample_size,
+                        r.power,
+                        r.power * 100.0,
+                        r.critical_value,
+                        r.interpretation,
+                        "=".repeat(60)
+                    );
+
+                    // Print to console
+                    println!("{}", output_text);
+
+                    // Save to file if specified
+                    if let Some(output_path) = output {
+                        use std::fs::File;
+                        use std::io::Write;
+
+                        let mut file = File::create(&output_path)
+                            .context(format!("Could not create output file '{}'", output_path))?;
+                        file.write_all(output_text.as_bytes())?;
+                        println!("✓ Results saved to: {}", output_path);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error in power analysis: {}", e);
                     std::process::exit(1);
                 }
             }

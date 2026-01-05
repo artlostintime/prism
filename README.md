@@ -674,6 +674,122 @@ prism reshape \
 
 ---
 
+## 📊 Power Analysis for Study Planning (NEW in v0.4.0!)
+
+Never run an underpowered study again! Prism includes statistical power analysis to help you plan studies and report results.
+
+### Calculate Required Sample Size (A Priori)
+
+**Before collecting data**, determine how many participants you need:
+
+```bash
+# How many participants for a medium effect with 80% power?
+prism power \
+  --test independent-t \
+  --effect-size 0.5 \
+  --power 0.80 \
+  --alpha 0.05
+```
+
+**Output:**
+
+```
+Sample Size:     63 per group
+Power:           0.800 (80.0%)
+Effect Size:     0.500 (Medium)
+```
+
+### Calculate Observed Power (Post-Hoc)
+
+**After data collection**, check if your study had adequate power:
+
+```bash
+# What power did I achieve with my sample?
+prism power \
+  --test correlation \
+  --effect-size 0.3 \
+  --sample-size 100 \
+  --alpha 0.05
+```
+
+**Output:**
+
+```
+Power:           0.862 (86.2%)
+Sample Size:     100
+Effect Size:     0.300 (Medium)
+Adequate power (≥ 0.80): 86.18%
+```
+
+### Supported Test Types
+
+- `independent-t` - Independent samples t-test
+- `paired-t` - Paired samples t-test
+- `one-sample-t` - One-sample t-test
+- `correlation` - Pearson correlation
+
+### Effect Size Guidelines (Cohen, 1988)
+
+**For t-tests (Cohen's d):**
+
+- Small: d = 0.2
+- Medium: d = 0.5
+- Large: d = 0.8
+
+**For correlations (Pearson's r):**
+
+- Small: r = 0.1
+- Medium: r = 0.3
+- Large: r = 0.5
+
+### Save Results to File
+
+```bash
+prism power \
+  --test paired-t \
+  --effect-size 0.5 \
+  --power 0.80 \
+  --output power_analysis.txt
+```
+
+### Real-World Examples
+
+**Example 1: Grant Proposal Planning**
+
+You're planning a therapy outcome study. Previous literature shows a medium effect (d = 0.5):
+
+```bash
+prism power --test paired-t --effect-size 0.5 --power 0.80
+# Result: Need 34 participants
+```
+
+Include in your proposal: _"Based on a power analysis (α = .05, power = .80, d = 0.5), we will recruit 34 participants."_
+
+**Example 2: Published Study Power Check**
+
+A published study reports r = 0.25 with n = 50. Did they have adequate power?
+
+```bash
+prism power --test correlation --effect-size 0.25 --sample-size 50
+# Result: Power = 0.48 (48%)  → Underpowered!
+```
+
+**Example 3: One-Tailed Test**
+
+```bash
+prism power --test independent-t --effect-size 0.5 --power 0.80 --tails 1
+# Result: n = 50 per group (vs. 63 for two-tailed)
+```
+
+**Example 4: Stricter Alpha Level**
+
+```bash
+prism power --test independent-t --effect-size 0.5 --power 0.80 --alpha 0.01
+# Result: n = 90 per group (more conservative)
+```
+
+---
+
 ## �📖 Need More Help?
 
 ### Quick Links
