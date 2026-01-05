@@ -328,6 +328,23 @@ fn validate_params(
     power: f64,
     tails: u8,
 ) -> Result<(), ProcessingError> {
+    // Check for NaN or infinity in all float parameters
+    if !effect_size.is_finite() {
+        return Err(ProcessingError::Custom(
+            "Effect size must be a finite number".to_string(),
+        ));
+    }
+    if !alpha.is_finite() {
+        return Err(ProcessingError::Custom(
+            "Alpha must be a finite number".to_string(),
+        ));
+    }
+    if !power.is_finite() {
+        return Err(ProcessingError::Custom(
+            "Power must be a finite number".to_string(),
+        ));
+    }
+
     if effect_size <= 0.0 {
         return Err(ProcessingError::Custom(
             "Effect size must be greater than 0".to_string(),

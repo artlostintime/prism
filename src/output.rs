@@ -387,13 +387,15 @@ pub fn generate_spss_syntax(
         }
 
         // Labels for computed scales
+        // Calculate min/max scores safely to avoid overflow with large scales
+        let items_len = scale_def.items.len() as u32;
+        let min_total = config.survey.min_score.saturating_mul(items_len);
+        let max_total = config.survey.max_score.saturating_mul(items_len);
+
         writeln!(
             file,
             "  {}_total '{} Total Score ({}-{})'",
-            scale_name,
-            scale_name,
-            config.survey.min_score * scale_def.items.len() as u32,
-            config.survey.max_score * scale_def.items.len() as u32
+            scale_name, scale_name, min_total, max_total
         )?;
         writeln!(
             file,

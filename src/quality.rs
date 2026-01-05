@@ -86,6 +86,7 @@ pub fn check_straightlining(
     }
 
     if item_values.len() > 1 {
+        // SAFETY: We've verified len() > 1, so [0] is safe
         let first = item_values[0];
         if item_values
             .iter()
@@ -121,7 +122,7 @@ pub fn check_low_variance(
     quality_issues: &mut Vec<QualityIssue>,
 ) {
     if item_values.len() < 2 {
-        return;
+        return; // Need at least 2 items for variance calculation
     }
 
     if let Some(quality_settings) = &config.quality {
@@ -129,6 +130,7 @@ pub fn check_low_variance(
             // Calculate variance inline to avoid extra function call
             let n = item_values.len() as f64;
             let mean = item_values.iter().sum::<f64>() / n;
+            // SAFETY: len() >= 2 verified above, so (n - 1.0) > 0
             let variance = item_values
                 .iter()
                 .map(|&x| {
@@ -305,6 +307,7 @@ pub fn check_alternating_pattern(
         }
     }
 
+    // SAFETY: unique_values.len() is guaranteed to be <= 2 due to early return above
     if unique_values.len() == 2 {
         // Check if pattern alternates consistently
         let alternates = item_values
@@ -350,6 +353,7 @@ pub fn check_block_pattern(
     let first_half = &item_values[..half];
     let second_half = &item_values[half..];
 
+    // SAFETY: len() >= 6, so half >= 3, both slices are non-empty
     // Check if first half is all the same value
     let first_value = first_half[0];
     let first_uniform = first_half

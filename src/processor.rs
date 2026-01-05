@@ -39,6 +39,8 @@ pub fn process_scale(
 
     let min_score = config.survey.min_score as f64;
     let max_score = config.survey.max_score as f64;
+    // Reverse scoring formula: reversed = (max + min) - original
+    // For 1-7 scale: reverse(1) = 8-1 = 7, reverse(7) = 8-7 = 1
     let score_range = max_score + min_score;
 
     // Pre-check if reverse scoring is needed

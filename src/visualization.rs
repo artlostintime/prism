@@ -361,12 +361,13 @@ pub fn generate_html_report(
 
         for &score in scores {
             let bin_idx = if range > 1e-10 {
-                ((score - stats.min) / bin_width).floor() as usize
+                let idx = ((score - stats.min) / bin_width).floor() as usize;
+                // Defensive: Clamp to valid range even if floating point errors occur
+                idx.min(num_bins - 1)
             } else {
                 // All values are the same, put everything in first bin
                 0
             };
-            let bin_idx = bin_idx.min(num_bins - 1);
             bins[bin_idx] += 1;
         }
 
