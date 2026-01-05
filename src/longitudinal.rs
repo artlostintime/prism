@@ -637,14 +637,26 @@ pub fn calculate_rci(params: RCIParams) -> Result<Vec<RCIResult>> {
     Ok(results)
 }
 
-/// Helper function to calculate standard deviation
+/// Helper function to calculate standard deviation using sample variance
+/// Uses Bessel's correction (n-1) for unbiased estimation
 fn calculate_sd(values: &[f64]) -> f64 {
-    if values.is_empty() {
-        return 0.0;
+    let n = values.len();
+    if n < 2 {
+        return 0.0; // Cannot calculate sample SD with n < 2
     }
 
-    let mean = values.iter().sum::<f64>() / values.len() as f64;
-    let variance = values.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / values.len() as f64;
+    let mean = values.iter().sum::<f64>() / n as f64;
+
+    // Use sample variance (n-1) for unbiased estimation
+    // This matches the variance calculation in stats.rs and quality.rs
+    let variance = values
+        .iter()
+        .map(|&x| {
+            let diff = x - mean;
+            diff * diff
+        })
+        .sum::<f64>()
+        / (n - 1) as f64; // ✅ FIXED: Sample variance (Bessel's correction)
 
     variance.sqrt()
 }
@@ -729,6 +741,40 @@ mod tests {
             format: DataFormat::Wide,
         };
         assert!(validate_longitudinal_config(&invalid_config).is_err());
+    }
+
+    #[test]
+    fn test_calculate_sd_uses_sample_variance() {
+        // Test data: [10, 12, 14, 16, 18]
+        // Mean = 14.0, Sample variance = 10.0, Sample SD = √10.0 ≈ 3.162
+        let values = vec![10.0, 12.0, 14.0, 16.0, 18.0];
+        let sd = calculate_sd(&values);
+
+        // Should use sample variance (n-1), not population variance (n)
+        assert!(
+            (sd - 3.162277660168).abs() < 1e-9,
+            "SD should be ~3.162, got {}",
+            sd
+        );
+    }
+
+    #[test]
+    fn test_calculate_sd_consistency_with_stats_module() {
+        use crate::stats::Stats;
+
+        // Verify calculate_sd produces same result as stats.rs
+        let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+
+        let sd_longitudinal = calculate_sd(&values);
+        let stats = Stats::calculate(&values);
+
+        // Should match exactly (both use sample variance with n-1)
+        assert!(
+            (sd_longitudinal - stats.sd).abs() < 1e-10,
+            "SD mismatch: longitudinal={}, stats.rs={}",
+            sd_longitudinal,
+            stats.sd
+        );
     }
 
     #[test]
