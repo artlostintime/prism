@@ -1,7 +1,10 @@
 // src/processor.rs
 use crate::config::{ScaleDefinition, SurveyConfig};
 use crate::errors::{ProcessingError, Result};
-use crate::quality::{check_low_variance, check_missing_data, check_straightlining};
+use crate::quality::{
+    check_alternating_pattern, check_block_pattern, check_diagonal_pattern, check_low_variance,
+    check_missing_data, check_straightlining,
+};
 use crate::types::{QualityIssue, ScaleResult};
 use std::collections::HashMap;
 
@@ -140,6 +143,31 @@ pub fn process_quality_checks(params: QualityCheckParams) {
             &params.scale_result.item_values,
             params.participant_id,
             params.config,
+            params.quality_flags,
+            params.quality_issues,
+        );
+
+        // Check for careless response patterns
+        check_diagonal_pattern(
+            params.scale_name,
+            &params.scale_result.item_values,
+            params.participant_id,
+            params.quality_flags,
+            params.quality_issues,
+        );
+
+        check_alternating_pattern(
+            params.scale_name,
+            &params.scale_result.item_values,
+            params.participant_id,
+            params.quality_flags,
+            params.quality_issues,
+        );
+
+        check_block_pattern(
+            params.scale_name,
+            &params.scale_result.item_values,
+            params.participant_id,
             params.quality_flags,
             params.quality_issues,
         );

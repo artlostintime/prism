@@ -186,6 +186,145 @@ pub fn calculate_careless_score(
     score
 }
 
+/// Check for diagonal response patterns (e.g., 1,2,3,4,5 or 5,4,3,2,1)
+///
+/// # Arguments
+/// * `scale_name` - Name of the scale being checked
+/// * `item_values` - Vector of item response values
+/// * `participant_id` - ID of the participant
+/// * `quality_flags` - Mutable vector to add flags to
+/// * `quality_issues` - Mutable vector to add issues to
+pub fn check_diagonal_pattern(
+    scale_name: &str,
+    item_values: &[f64],
+    participant_id: &str,
+    quality_flags: &mut Vec<String>,
+    quality_issues: &mut Vec<QualityIssue>,
+) {
+    if item_values.len() < 4 {
+        return; // Need at least 4 items to detect pattern
+    }
+
+    // Check for ascending diagonal (1,2,3,4,5...)
+    let ascending = item_values.windows(2).all(|w| {
+        let diff = w[1] - w[0];
+        (diff - 1.0).abs() < FLOAT_EPSILON
+    });
+
+    // Check for descending diagonal (5,4,3,2,1...)
+    let descending = item_values.windows(2).all(|w| {
+        let diff = w[0] - w[1];
+        (diff - 1.0).abs() < FLOAT_EPSILON
+    });
+
+    if ascending || descending {
+        let pattern_type = if ascending { "ascending" } else { "descending" };
+        let issue = format!("Diagonal pattern ({}): {}", pattern_type, scale_name);
+        quality_flags.push(issue.clone());
+        quality_issues.push(QualityIssue::new(participant_id, "DiagonalPattern", issue));
+    }
+}
+
+/// Check for alternating response patterns (e.g., 1,5,1,5,1,5)
+///
+/// # Arguments
+/// * `scale_name` - Name of the scale being checked
+/// * `item_values` - Vector of item response values
+/// * `participant_id` - ID of the participant
+/// * `quality_flags` - Mutable vector to add flags to
+/// * `quality_issues` - Mutable vector to add issues to
+pub fn check_alternating_pattern(
+    scale_name: &str,
+    item_values: &[f64],
+    participant_id: &str,
+    quality_flags: &mut Vec<String>,
+    quality_issues: &mut Vec<QualityIssue>,
+) {
+    if item_values.len() < 4 {
+        return; // Need at least 4 items to detect pattern
+    }
+
+    // Check if values alternate between two distinct values
+    let mut unique_values: Vec<f64> = Vec::new();
+    for &val in item_values {
+        if !unique_values
+            .iter()
+            .any(|&v| (v - val).abs() < FLOAT_EPSILON)
+        {
+            unique_values.push(val);
+            if unique_values.len() > 2 {
+                return; // More than 2 unique values, can't be simple alternating
+            }
+        }
+    }
+
+    if unique_values.len() == 2 {
+        // Check if pattern alternates consistently
+        let alternates = item_values
+            .windows(3)
+            .all(|w| (w[0] - w[2]).abs() < FLOAT_EPSILON && (w[0] - w[1]).abs() > FLOAT_EPSILON);
+
+        if alternates {
+            let issue = format!(
+                "Alternating pattern ({:.0},{:.0}): {}",
+                unique_values[0], unique_values[1], scale_name
+            );
+            quality_flags.push(issue.clone());
+            quality_issues.push(QualityIssue::new(
+                participant_id,
+                "AlternatingPattern",
+                issue,
+            ));
+        }
+    }
+}
+
+/// Check for block patterns (e.g., all 1s, then all 5s)
+///
+/// # Arguments
+/// * `scale_name` - Name of the scale being checked
+/// * `item_values` - Vector of item response values
+/// * `participant_id` - ID of the participant
+/// * `quality_flags` - Mutable vector to add flags to
+/// * `quality_issues` - Mutable vector to add issues to
+pub fn check_block_pattern(
+    scale_name: &str,
+    item_values: &[f64],
+    participant_id: &str,
+    quality_flags: &mut Vec<String>,
+    quality_issues: &mut Vec<QualityIssue>,
+) {
+    if item_values.len() < 6 {
+        return; // Need at least 6 items to detect meaningful blocks
+    }
+
+    let half = item_values.len() / 2;
+    let first_half = &item_values[..half];
+    let second_half = &item_values[half..];
+
+    // Check if first half is all the same value
+    let first_value = first_half[0];
+    let first_uniform = first_half
+        .iter()
+        .all(|&x| (x - first_value).abs() < FLOAT_EPSILON);
+
+    // Check if second half is all the same value
+    let second_value = second_half[0];
+    let second_uniform = second_half
+        .iter()
+        .all(|&x| (x - second_value).abs() < FLOAT_EPSILON);
+
+    // Block pattern if both halves are uniform and different
+    if first_uniform && second_uniform && (first_value - second_value).abs() > FLOAT_EPSILON {
+        let issue = format!(
+            "Block pattern ({:.0} then {:.0}): {}",
+            first_value, second_value, scale_name
+        );
+        quality_flags.push(issue.clone());
+        quality_issues.push(QualityIssue::new(participant_id, "BlockPattern", issue));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
