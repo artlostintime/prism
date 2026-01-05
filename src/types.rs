@@ -131,6 +131,7 @@ pub enum OutputFormat {
     Spss,
     R,
     Python,
+    HtmlReport,
 }
 
 impl OutputFormat {
@@ -142,6 +143,7 @@ impl OutputFormat {
             OutputFormat::Spss => "sps",
             OutputFormat::R => "R",
             OutputFormat::Python => "py",
+            OutputFormat::HtmlReport => "html",
         }
     }
 }

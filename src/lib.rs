@@ -35,6 +35,7 @@ pub mod scales;
 pub mod stats;
 pub mod types;
 pub mod validation;
+pub mod visualization;
 
 // Re-export commonly used types
 pub use config::SurveyConfig;

@@ -11,7 +11,8 @@ use prism::{
     stats::Stats,
     types::{OutputFormat, QualityIssue},
     validation::{generate_config_template, validate_batch_file, validate_config},
-    DEFAULT_QUALITY_FILE, DEFAULT_STATS_FILE, QUALITY_FLAG_OK, QUALITY_FLAG_SEPARATOR,
+    visualization, DEFAULT_QUALITY_FILE, DEFAULT_STATS_FILE, QUALITY_FLAG_OK,
+    QUALITY_FLAG_SEPARATOR,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -1022,6 +1023,17 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
                 let py_path = options.output.replace(".csv", ".py");
                 generate_python_script(&options.output, &config, &py_path)?;
                 info!("Python script saved to: {}", py_path);
+            }
+            OutputFormat::HtmlReport => {
+                let html_path = options.output.replace(".csv", "_report.html");
+                visualization::generate_html_report(
+                    &config,
+                    &scale_scores,
+                    &quality_issues,
+                    processed_count,
+                    &html_path,
+                )?;
+                info!("HTML report saved to: {}", html_path);
             }
             OutputFormat::Csv => {
                 // Already saved

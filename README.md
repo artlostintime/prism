@@ -829,7 +829,51 @@ prism power --test independent-t --effect-size 0.5 --power 0.80 --alpha 0.01
 
 ---
 
-## 🔬 Reproducible Analysis Scripts (NEW in v0.6.0!)
+## � Data Visualization & HTML Reports (NEW in v0.7.0!)
+
+Get instant visual insights with interactive HTML reports featuring distribution plots, quality dashboards, and professional styling!
+
+### Generate HTML Report
+
+```bash
+prism process -i data.csv -c config.toml -o results.csv --format html-report
+```
+
+Creates `results_report.html` with:
+
+- ✅ **Overview Dashboard** - Total participants, clean/flagged counts, scale summaries
+- ✅ **Interactive Charts** - Distribution histograms for all scales (powered by Chart.js)
+- ✅ **Scale Statistics Table** - Mean, SD, Min, Max, N for each scale
+- ✅ **Quality Issues Dashboard** - Issue type summaries and detailed participant flags
+- ✅ **Professional Styling** - Responsive design, print-friendly, publication-ready
+
+**Perfect for:**
+
+- Quick data exploration before analysis
+- Quality assessment dashboards
+- Sharing results with collaborators
+- Presentations and reports
+
+**Example Output:**
+
+The HTML report includes:
+
+- 📈 Histogram for each scale showing score distributions
+- 📊 Color-coded quality badges (clean vs. flagged)
+- 📋 Sortable statistics table
+- ⚠️ Quality issue breakdown by type
+- 🎨 Modern, professional design with Chart.js visualizations
+
+**Why HTML Reports?**
+
+- **No code required** - Just open in any web browser
+- **Shareable** - Send to collaborators who don't use R/Python
+- **Interactive** - Hover over charts for details
+- **Fast** - Get immediate visual feedback on your data quality
+
+---
+
+## 🔬 Reproducible Analysis Scripts (v0.6.0)
 
 Generate complete, ready-to-run analysis scripts in R or Python with visualizations, reliability analysis, and publication-quality outputs!
 

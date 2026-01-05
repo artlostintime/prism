@@ -251,7 +251,46 @@ prism process --input data.csv --config study.toml --output results.csv --format
 
 ---
 
-## 🚀 Version 0.7.0+ (Future)
+## ✅ Version 0.7.0 (Current Release)
+
+### 📊 Data Visualization & HTML Reports ✅
+
+**Status:** Completed | **Priority:** High | **Complexity:** Medium
+
+Interactive HTML reports with distribution plots and quality dashboards.
+
+**Features:**
+
+- HTML report generation with `--format html-report`
+- Interactive Chart.js visualizations
+- Distribution histograms for all scales
+- Overview dashboard (participants, clean/flagged counts)
+- Scale statistics table (M, SD, Min, Max, N)
+- Quality issues dashboard with issue type breakdown
+- Responsive, professional styling
+- Print-friendly design
+- Zero external dependencies (standalone HTML files)
+
+**Benefits:**
+
+- Instant visual data exploration
+- Share with non-technical collaborators
+- No coding required to view results
+- Quality assessment at a glance
+- Publication-ready charts
+
+**Technical Implementation:**
+
+- New `src/visualization.rs` module (508 lines)
+- Chart.js via CDN for interactive charts
+- Modern CSS with CSS variables for theming
+- Histogram generation with automatic binning
+- Quality badge system (clean vs. flagged)
+- 9 comprehensive integration tests
+
+---
+
+## 🚀 Version 0.8.0+ (Future)
 
 ### Survey Platform Integration
 
@@ -260,12 +299,12 @@ prism process --input data.csv --config study.toml --output results.csv --format
 - Automatic column mapping
 - Real-time processing during data collection
 
-### Data Visualization
+### Advanced Visualizations
 
-- Distribution histograms
 - Box plots for outlier detection
 - Missing data heatmaps
-- Quality issue dashboards
+- Correlation matrices with p-values
+- Time series plots for longitudinal data
 
 ### Advanced Quality Checks
 
@@ -273,11 +312,6 @@ prism process --input data.csv --config study.toml --output results.csv --format
 - IP duplicate detection
 - Bot detection patterns
 - Semantic inconsistency checks
-
-### Reproducibility Features
-
-- Generate R/Python analysis scripts
-- APA-formatted methods section generator
 - CONSORT flowchart generator
 - Data dictionary export
 
