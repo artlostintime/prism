@@ -1157,12 +1157,23 @@ MIT License - see LICENSE file for details
 
 ---
 
+## 📚 Documentation
+
+- **[Getting Started](docs/INSTALLATION.md)** - Installation and setup
+- **[User Guide](docs/HOW_TO_USE.md)** - Complete usage guide
+- **[Configuration](docs/CONFIGURATION_GUIDE.md)** - Config file reference
+- **[API Reference](docs/API_REFERENCE.md)** - Developer documentation
+- **[Release Notes](docs/releases/)** - Version history and changelogs
+- **[Development History](docs/archive/)** - Technical reports and refactoring docs
+
+---
+
 ## Citation
 
 If you use Prism in your research, please cite:
 
 ```
-Shuvi. (2026). Prism: Psychology Research Data Processing Pipeline.
+Shuvi. (2026). Prism: Psychology Research Data Processing Pipeline (v0.8.5).
 GitHub: https://github.com/artlostintime/prism
 ```
 

@@ -23,19 +23,19 @@ anyhow = "1.0.100"
 clap = { version = "4.5.53", features = ["derive"] }
 csv = "1.4.0"
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0"
 toml = "0.9.10"
 chrono = "0.4"
 log = "0.4"
 env_logger = "0.11"
 rayon = "1.8"
-
-[target.'cfg(windows)'.dependencies]
-winreg = "0.52"
-indicatif = "0.17"
-serde_json = "1.0"
 strsim = "0.11"
 thiserror = "1.0"
 rust_xlsxwriter = "0.72"
+indicatif = "0.17"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
 
 [dev-dependencies]
 assert_cmd = "2.0"
