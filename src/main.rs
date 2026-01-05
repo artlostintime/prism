@@ -858,6 +858,7 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
         pb.set_style(
             ProgressStyle::default_bar()
                 .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos}/{len} {msg}")
+                // SAFETY: Template string is hardcoded and valid
                 .unwrap()
                 .progress_chars("█▓▒░"),
         );
@@ -910,6 +911,8 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
                     prec = decimal_places
                 ));
 
+                // SAFETY: scale_name exists in the HashMap because it was pre-allocated
+                // on line 849-851 using config.scales.keys()
                 scale_scores
                     .get_mut(scale_name)
                     .unwrap()
@@ -917,7 +920,7 @@ fn process_file(options: ProcessingOptions) -> Result<()> {
                 scale_items_matrix
                     .get_mut(scale_name)
                     .unwrap()
-                    .push(scale_result.item_values); // Removed unnecessary clone
+                    .push(scale_result.item_values);
             } else {
                 out_record.push("NA".to_string());
                 out_record.push("NA".to_string());
@@ -1306,6 +1309,7 @@ fn show_interactive_help_and_install() {
         println!("       • Allow you to delete the downloaded file");
         println!();
         print!("    Would you like to install now? (Y/n): ");
+        // stdout().flush() failure is acceptable - will print anyway
         io::stdout().flush().unwrap();
 
         let mut response = String::new();
@@ -1324,21 +1328,39 @@ fn show_interactive_help_and_install() {
                                 println!("    ✅ Copied to: {}", install_path.display());
 
                                 // Add to PATH
-                                match add_to_path(install_dir.to_str().unwrap()) {
-                                    Ok(_) => {
-                                        println!("    ✅ Added to PATH!");
-                                        println!(
-                                            "    🔄 Please restart your terminal/command prompt."
-                                        );
-                                        println!("       Then you can use 'prism' from anywhere!");
-                                        println!();
-                                        println!(
-                                            "    💡 You can now safely delete the downloaded file."
-                                        );
-                                        println!();
+                                // Convert PathBuf to str - handle non-UTF8 paths gracefully
+                                match install_dir.to_str() {
+                                    Some(install_dir_str) => {
+                                        match add_to_path(install_dir_str) {
+                                            Ok(_) => {
+                                                println!("    ✅ Added to PATH!");
+                                                println!(
+                                                "    🔄 Please restart your terminal/command prompt."
+                                            );
+                                                println!("       Then you can use 'prism' from anywhere!");
+                                                println!();
+                                                println!(
+                                                "    💡 You can now safely delete the downloaded file."
+                                            );
+                                                println!();
+                                            }
+                                            Err(e) => {
+                                                println!(
+                                                    "    ⚠️  Warning: Failed to add to PATH: {}",
+                                                    e
+                                                );
+                                                println!(
+                                                    "    You can still run: {}",
+                                                    install_path.display()
+                                                );
+                                                println!();
+                                            }
+                                        }
                                     }
-                                    Err(e) => {
-                                        println!("    ⚠️  Warning: Failed to add to PATH: {}", e);
+                                    None => {
+                                        println!(
+                                            "    ⚠️  Warning: Installation path contains invalid UTF-8"
+                                        );
                                         println!(
                                             "    You can still run: {}",
                                             install_path.display()
@@ -1392,6 +1414,7 @@ fn show_interactive_help_and_install() {
     println!("      prism generate --template > config.toml");
     println!();
     println!("    ▸ Show all options:");
+    // stdout().flush() failure is acceptable - will print anyway
     println!("      prism --help");
     println!();
     println!("    ┌─────────────────────────────────────────────────────────┐");
@@ -1461,6 +1484,7 @@ fn show_interactive_help_and_install() {
     println!("    prism --help\n");
     println!("💡 TIP: For a graphical interface, use the GUI version instead.\n");
 
+    // stdout().flush() failure is acceptable - will print anyway
     print!("Press Enter to exit...");
     io::stdout().flush().unwrap();
     let mut input = String::new();

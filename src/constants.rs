@@ -63,3 +63,19 @@ pub const WEIGHT_STRAIGHTLINING: f64 = 0.5;
 
 /// Weight for low variance in careless responding calculation
 pub const WEIGHT_LOW_VARIANCE: f64 = 0.2;
+
+// Output and Processing Constants
+/// Quality flag indicating no issues detected
+pub const QUALITY_FLAG_OK: &str = "OK";
+
+/// Separator for multiple quality flags
+pub const QUALITY_FLAG_SEPARATOR: &str = "; ";
+
+/// Progress bar update interval (in records processed)
+pub const PROGRESS_INTERVAL: usize = 100;
+
+/// Default statistics output filename
+pub const DEFAULT_STATS_FILE: &str = "summary_stats.txt";
+
+/// Default quality report filename
+pub const DEFAULT_QUALITY_FILE: &str = "quality_report.txt";

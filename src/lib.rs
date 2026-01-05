@@ -45,13 +45,11 @@ pub use errors::{ProcessingError, Result};
 pub use scales::{NormativeData, ScaleMetadata};
 pub use types::{MissingPercent, OutputFormat, QualityIssue, ScaleResult, ScoreValue};
 
-// Constants
-pub const FLOAT_EPSILON: f64 = 1e-10;
-pub const QUALITY_FLAG_OK: &str = "OK";
-pub const QUALITY_FLAG_SEPARATOR: &str = "; ";
-pub const PROGRESS_INTERVAL: usize = 100;
-pub const DEFAULT_STATS_FILE: &str = "summary_stats.txt";
-pub const DEFAULT_QUALITY_FILE: &str = "quality_report.txt";
+// Re-export constants from central constants module
+pub use constants::{
+    DEFAULT_QUALITY_FILE, DEFAULT_STATS_FILE, FLOAT_EPSILON, PROGRESS_INTERVAL, QUALITY_FLAG_OK,
+    QUALITY_FLAG_SEPARATOR,
+};
 
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
