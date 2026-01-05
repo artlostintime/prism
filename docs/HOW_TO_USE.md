@@ -190,6 +190,90 @@ for file in data/*.csv; do
 done
 ```
 
+### Longitudinal Data Analysis (v0.3.0+)
+
+**Scenario:** You have depression scores collected at 3 time points and want to:
+
+1. Merge the data
+2. Calculate clinically significant change
+3. Prepare for growth curve analysis
+
+**Step 1: Merge Wave Files**
+
+```bash
+prism merge \
+  --waves Baseline:baseline_data.csv Post:post_treatment.csv FollowUp:followup_6mo.csv \
+  --id ParticipantID \
+  --join outer \
+  -o merged_longitudinal.csv
+```
+
+This creates a single file with all time points merged by participant ID.
+
+**Step 2: Calculate Reliable Change Index (RCI)**
+
+```bash
+# Calculate RCI between baseline and post-treatment
+prism rci \
+  -i merged_longitudinal.csv \
+  --baseline PHQ9_Baseline \
+  --followup PHQ9_Post \
+  --reliability 0.89 \
+  --id ParticipantID \
+  -o rci_treatment.csv
+
+# Calculate RCI for maintenance period (post to follow-up)
+prism rci \
+  -i merged_longitudinal.csv \
+  --baseline PHQ9_Post \
+  --followup PHQ9_FollowUp \
+  --reliability 0.89 \
+  --id ParticipantID \
+  -o rci_maintenance.csv
+```
+
+The RCI output includes:
+
+- `rci_score` - Statistical measure of change
+- `interpretation` - "Improved", "Deteriorated", or "No reliable change"
+- `change` - Raw change score
+- `percent_change` - Percentage change from baseline
+
+**Step 3: Reshape for Growth Curve Analysis**
+
+```bash
+# Convert to long format for multilevel modeling
+prism reshape \
+  -i merged_longitudinal.csv \
+  --format wide-to-long \
+  --waves Baseline Post FollowUp \
+  --id ParticipantID \
+  -o long_format.csv
+```
+
+**Result:** Data is ready for analysis in R (lme4, nlme) or other statistical software.
+
+**Complete Example:**
+
+```bash
+# Process individual waves first
+prism process -i baseline_raw.csv -c phq9_config.toml -o baseline_data.csv --all-outputs
+prism process -i post_raw.csv -c phq9_config.toml -o post_treatment.csv --all-outputs
+prism process -i followup_raw.csv -c phq9_config.toml -o followup_6mo.csv --all-outputs
+
+# Merge waves
+prism merge --waves T1:baseline_data.csv T2:post_treatment.csv T3:followup_6mo.csv \
+  --id ParticipantID --join outer -o merged.csv
+
+# Calculate RCI (T1 → T2)
+prism rci -i merged.csv --baseline PHQ9_total_T1 --followup PHQ9_total_T2 \
+  --reliability 0.89 --id ParticipantID -o rci_results.csv
+
+# Reshape for growth analysis
+prism reshape -i merged.csv --format wide-to-long --waves T1 T2 T3 \
+  --id ParticipantID -o long_data.csv
+```
+
 ### Check Before Processing
 
 ```bash

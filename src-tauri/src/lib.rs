@@ -272,6 +272,47 @@ fn open_folder(path: String) -> Result<(), String> {
     Ok(())
 }
 
+// COMMAND 8: Get list of available pre-built scales
+#[command]
+fn get_available_scales() -> Vec<String> {
+    prism::scales::list_available_scales()
+}
+
+// COMMAND 9: Get scale metadata
+#[command]
+fn get_scale_info(scale_id: String) -> Result<String, String> {
+    prism::scales::get_scale_metadata(&scale_id)
+        .map(|metadata| {
+            serde_json::json!({
+                "name": metadata.name,
+                "full_name": metadata.full_name,
+                "citation": metadata.citation,
+                "description": metadata.description,
+                "num_items": metadata.num_items,
+                "min_score": metadata.min_score,
+                "max_score": metadata.max_score,
+                "interpretation": metadata.interpretation,
+                "normative_data": metadata.normative_data.map(|norm| {
+                    serde_json::json!({
+                        "population": norm.population,
+                        "mean": norm.mean,
+                        "sd": norm.sd,
+                        "clinical_cutoff": norm.clinical_cutoff,
+                        "severity_ranges": norm.severity_ranges
+                    })
+                })
+            })
+            .to_string()
+        })
+        .map_err(|e| e.to_string())
+}
+
+// COMMAND 10: Generate scale config
+#[command]
+fn generate_scale_config(scale_id: String) -> Result<String, String> {
+    prism::scales::generate_scale_config(&scale_id).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -283,7 +324,10 @@ pub fn run() {
             save_config_text,
             run_analysis,
             get_csv_info,
-            open_folder
+            open_folder,
+            get_available_scales,
+            get_scale_info,
+            generate_scale_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

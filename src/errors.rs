@@ -6,8 +6,14 @@ pub enum ProcessingError {
     #[error("Configuration error: {0}")]
     ConfigError(String),
 
+    #[error("Configuration error: {0}")]
+    Config(String),
+
     #[error("Validation error: {0}")]
     ValidationError(String),
+
+    #[error("Feature not yet implemented: {0}")]
+    NotImplemented(String),
 
     #[error("Data error at row {row}: {message}")]
     DataError { row: usize, message: String },

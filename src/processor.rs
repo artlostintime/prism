@@ -64,7 +64,7 @@ pub fn process_scale(
             }
 
             // Reverse scoring if needed - use reference to avoid clone
-            let final_val = if has_reverse.map_or(false, |rev| rev.contains(item_name)) {
+            let final_val = if has_reverse.is_some_and(|rev| rev.contains(item_name)) {
                 score_range - val
             } else {
                 val
@@ -98,47 +98,50 @@ pub fn process_scale(
     ))
 }
 
+/// Parameters for quality check processing
+pub struct QualityCheckParams<'a> {
+    pub scale_name: &'a str,
+    pub scale_result: &'a ScaleResult,
+    pub missing_count: usize,
+    pub total_items: usize,
+    pub participant_id: &'a str,
+    pub config: &'a SurveyConfig,
+    pub quality_flags: &'a mut Vec<String>,
+    pub quality_issues: &'a mut Vec<QualityIssue>,
+}
+
 /// Process all quality checks for a scale
-pub fn process_quality_checks(
-    scale_name: &str,
-    scale_result: &ScaleResult,
-    missing_count: usize,
-    total_items: usize,
-    participant_id: &str,
-    config: &SurveyConfig,
-    quality_flags: &mut Vec<String>,
-    quality_issues: &mut Vec<QualityIssue>,
-) {
+pub fn process_quality_checks(params: QualityCheckParams) {
     // Check missing data
     check_missing_data(
-        scale_name,
-        missing_count,
-        total_items,
-        participant_id,
-        config,
-        quality_flags,
-        quality_issues,
+        params.scale_name,
+        params.missing_count,
+        params.total_items,
+        params.participant_id,
+        params.config,
+        params.quality_flags,
+        params.quality_issues,
     );
 
     // Check straightlining
-    if scale_result.valid_items > 0 {
+    if params.scale_result.valid_items > 0 {
         check_straightlining(
-            scale_name,
-            &scale_result.item_values,
-            participant_id,
-            config,
-            quality_flags,
-            quality_issues,
+            params.scale_name,
+            &params.scale_result.item_values,
+            params.participant_id,
+            params.config,
+            params.quality_flags,
+            params.quality_issues,
         );
 
         // Check low variance
         check_low_variance(
-            scale_name,
-            &scale_result.item_values,
-            participant_id,
-            config,
-            quality_flags,
-            quality_issues,
+            params.scale_name,
+            &params.scale_result.item_values,
+            params.participant_id,
+            params.config,
+            params.quality_flags,
+            params.quality_issues,
         );
     }
 }
@@ -153,8 +156,7 @@ pub fn get_participant_id(
     let id_column = config
         .survey
         .participant_id_column
-        .as_ref()
-        .map(|s| s.as_str())
+        .as_deref()
         .unwrap_or("ResponseId");
 
     header_map

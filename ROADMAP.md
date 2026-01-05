@@ -2,7 +2,7 @@
 
 This document outlines planned features and enhancements for future releases.
 
-## ✅ Version 0.2.0 (Current)
+## ✅ Version 0.2.0 (Previous Release)
 
 - ✅ Core data processing pipeline
 - ✅ Reverse scoring and scale computation
@@ -16,13 +16,13 @@ This document outlines planned features and enhancements for future releases.
 
 ---
 
-## 🎯 Version 0.3.0 (Planned)
+## ✅ Version 0.3.0 (Current)
 
-### 📚 Pre-built Scale Libraries
+### 📚 Pre-built Scale Libraries ✅
 
-**Priority:** High | **Complexity:** Medium
+**Status:** Completed | **Priority:** High | **Complexity:** Medium
 
-Add a library of commonly used psychology scales with pre-configured settings.
+Library of commonly used psychology scales with pre-configured settings.
 
 **Features:**
 
@@ -58,20 +58,19 @@ scales/
 
 ---
 
-### 📊 Longitudinal Data Support
+### 📊 Longitudinal Data Support ✅
 
-**Priority:** High | **Complexity:** High
+**Status:** Completed | **Priority:** High | **Complexity:** High
 
 Support for multi-wave/repeated measures studies.
 
 **Features:**
 
-- Merge data from multiple time points (T1, T2, T3...)
-- Automatic ID matching across waves
-- Wide vs. long format conversion
-- Time-based quality checks (e.g., impossible response times)
-- Reliable change index calculations
-- Growth curve modeling preparation
+- ✅ Merge data from multiple time points (T1, T2, T3...)
+- ✅ Automatic ID matching across waves
+- ✅ Wide vs. long format conversion
+- ✅ Reliable change index calculations
+- ✅ Growth curve modeling preparation
 
 **Technical Implementation:**
 
@@ -104,6 +103,8 @@ format = "wide"  # or "long"
 - Detect impossible time patterns
 
 ---
+
+## 🚀 Version 0.4.0 (Future)
 
 ### 📈 Power Analysis Helper
 
@@ -150,9 +151,7 @@ tails = 2
 - Report power in methods sections
 - Avoid underpowered studies
 
----
-
-## 🚀 Version 0.4.0+ (Future)
+-- 🚀 Version 0.4.0+ (Future)
 
 ### Advanced SPSS Integration
 
@@ -230,5 +229,5 @@ Interested in implementing a roadmap feature?
 
 ---
 
-**Last Updated:** January 3, 2026  
-**Current Version:** 0.2.1
+**Last Updated:** January 5, 2026  
+**Current Version:** 0.3.0

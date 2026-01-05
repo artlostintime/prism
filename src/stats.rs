@@ -138,9 +138,7 @@ pub fn calculate_cronbachs_alpha(item_matrix: &[Vec<f64>]) -> f64 {
 
     // Cronbach's alpha formula
     let k = n_items as f64;
-    let alpha = (k / (k - 1.0)) * (1.0 - (sum_item_variances / total_variance));
-
-    alpha
+    (k / (k - 1.0)) * (1.0 - (sum_item_variances / total_variance))
 }
 
 /// Calculate variance of a set of values

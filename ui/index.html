@@ -834,9 +834,53 @@
     <div id="examplesModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 style="margin: 0">📝 Configuration Examples</h2>
+          <h2 style="margin: 0">📝 Configuration Templates</h2>
           <button class="modal-close" onclick="closeExamples()">×</button>
         </div>
+
+        <!-- Pre-built Scales Section -->
+        <h3
+          style="
+            margin: 1.5rem 0 0.5rem 0;
+            color: var(--accent);
+            font-size: 1rem;
+          "
+        >
+          🔬 Pre-built Psychology Scales
+        </h3>
+        <p
+          style="
+            color: var(--text-light);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+          "
+        >
+          Ready-to-use configs for validated instruments with citations
+        </p>
+        <div class="examples-grid" id="scalesGrid" style="margin-bottom: 2rem">
+          <!-- Dynamically loaded from Rust -->
+          <div
+            style="
+              grid-column: 1 / -1;
+              text-align: center;
+              padding: 2rem;
+              color: var(--text-light);
+            "
+          >
+            Loading scales...
+          </div>
+        </div>
+
+        <!-- Example Templates Section -->
+        <h3
+          style="
+            margin: 1.5rem 0 0.5rem 0;
+            color: var(--accent);
+            font-size: 1rem;
+          "
+        >
+          📋 Example Templates
+        </h3>
 
         <div class="example-item" onclick="loadExample('basic')">
           <div class="example-title">Basic Survey</div>
@@ -894,7 +938,66 @@
       // Initialize
       async function init() {
         await initConfigTemplate();
+        await loadAvailableScales();
         setupKeyboardShortcuts();
+      }
+
+      // Load available pre-built scales
+      async function loadAvailableScales() {
+        try {
+          const scales = await window.__TAURI__.core.invoke(
+            "get_available_scales"
+          );
+          const scalesGrid = document.getElementById("scalesGrid");
+
+          if (scales && scales.length > 0) {
+            scalesGrid.innerHTML = scales
+              .map(
+                (scaleName) => `
+              <div class="example-item" onclick="loadScale('${scaleName}')">
+                <div class="example-title">${scaleName}</div>
+                <div class="example-desc">
+                  Click to load validated scale config
+                </div>
+              </div>
+            `
+              )
+              .join("");
+          } else {
+            scalesGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 1rem; color: var(--text-light);">No scales available</div>`;
+          }
+        } catch (error) {
+          console.error("Failed to load scales:", error);
+          const scalesGrid = document.getElementById("scalesGrid");
+          scalesGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 1rem; color: var(--error);">Failed to load scales: ${error}</div>`;
+        }
+      }
+
+      // Load a pre-built scale configuration
+      async function loadScale(scaleName) {
+        try {
+          showStatus(`Loading ${scaleName} configuration...`, "info");
+          const config = await window.__TAURI__.core.invoke(
+            "generate_scale_config",
+            {
+              scaleId: scaleName,
+            }
+          );
+
+          document.getElementById("configTextarea").value = config;
+          configText = config;
+          closeExamples();
+
+          if (!isEditingConfig) {
+            toggleConfigEditor();
+          }
+
+          validateConfig();
+          showStatus(`✅ Loaded ${scaleName} configuration`, "success");
+        } catch (error) {
+          console.error(`Failed to load ${scaleName}:`, error);
+          showStatus(`Failed to load ${scaleName}: ${error}`, "error");
+        }
       }
 
       // Load default config template

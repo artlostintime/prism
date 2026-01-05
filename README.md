@@ -12,11 +12,12 @@ Prism does all that boring stuff automatically, so you can focus on what actuall
 
 Think of Prism as your research assistant that:
 
-1. **Reverse-scores items automatically** (no more Excel formulas!)
-2. **Calculates scale totals and means** (instantly, no errors)
-3. **Finds data quality issues** (straightliners, missing data, weird responses)
-4. **Generates statistical reports** (with Cronbach's alpha and everything)
-5. **Exports in multiple formats** (Excel, SPSS, R, JSON... you name it)
+1. **Pre-built scale library** 🆕 (PHQ-9, GAD-7, PSS, PANAS, BDI-II, BAI, SWLS with citations!)
+2. **Reverse-scores items automatically** (no more Excel formulas!)
+3. **Calculates scale totals and means** (instantly, no errors)
+4. **Finds data quality issues** (straightliners, missing data, weird responses)
+5. **Generates statistical reports** (with Cronbach's alpha and everything)
+6. **Exports in multiple formats** (Excel, SPSS, R, JSON... you name it)
 
 **Real talk:** What used to take me 45-60 minutes in Excel now takes 30 seconds. ⚡
 
@@ -60,6 +61,33 @@ Let's say you have a burnout survey with questions Q1-Q20, and you need to:
 - Check data quality
 
 ### 1️⃣ Create Your Config File
+
+**Option A: Use a Pre-built Scale** (NEW in v0.3.0! 🎉)
+
+```bash
+# See all available scales
+prism generate --list-scales
+
+# Generate config for PHQ-9 (depression screening)
+prism generate --scale PHQ-9 > my_survey.toml
+
+# Get detailed info about a scale
+prism generate --scale-info GAD-7
+```
+
+**Available Pre-built Scales:**
+
+- `PHQ-9` - Patient Health Questionnaire (Depression)
+- `GAD-7` - Generalized Anxiety Disorder
+- `PSS-10` / `PSS-14` - Perceived Stress Scale
+- `PANAS` - Positive and Negative Affect
+- `BDI-II` - Beck Depression Inventory
+- `BAI` - Beck Anxiety Inventory
+- `SWLS` - Satisfaction With Life Scale
+
+Each comes with proper citations, scoring rules, and normative data!
+
+**Option B: Create Your Own Template**
 
 Run this to get a template:
 
@@ -472,7 +500,181 @@ done
 
 ---
 
-## 📖 Need More Help?
+## � Longitudinal Data Analysis (NEW in v0.3.0+!)
+
+Prism now includes powerful features for analyzing repeated measures and longitudinal data!
+
+### Merge Multiple Waves
+
+Combine data from multiple time points automatically:
+
+```bash
+# Merge three waves by participant ID
+prism merge \
+  --waves T1:wave1_data.csv T2:wave2_data.csv T3:wave3_data.csv \
+  --id ParticipantID \
+  --join outer \
+  -o merged_data.csv
+```
+
+**Join Types:**
+
+- `inner` - Keep only participants present in ALL waves (strictest)
+- `outer` - Keep all participants, even if they missed some waves (most inclusive)
+
+### Convert Between Wide and Long Formats
+
+Transform your data for different analyses:
+
+**Wide to Long** (for growth curve modeling, multilevel analysis):
+
+```bash
+# Convert: depression_T1, depression_T2 → multiple rows with Time column
+prism reshape \
+  -i merged_data.csv \
+  --format wide-to-long \
+  --waves T1 T2 T3 \
+  --id ParticipantID \
+  -o long_format.csv
+```
+
+**Before (Wide):**
+
+```csv
+ParticipantID,depression_T1,depression_T2,depression_T3
+P001,12.5,10.2,8.1
+P002,15.0,14.8,14.2
+```
+
+**After (Long):**
+
+```csv
+ParticipantID,Time,depression
+P001,T1,12.5
+P001,T2,10.2
+P001,T3,8.1
+P002,T1,15.0
+P002,T2,14.8
+P002,T3,14.2
+```
+
+**Long to Wide** (for repeated measures ANOVA):
+
+```bash
+# Convert back: Time column → depression_T1, depression_T2, depression_T3
+prism reshape \
+  -i long_format.csv \
+  --format long-to-wide \
+  --waves T1 T2 T3 \
+  --id ParticipantID \
+  --time-col Time \
+  -o wide_format.csv
+```
+
+### Calculate Reliable Change Index (RCI)
+
+Determine if changes are **clinically significant** (not just statistically significant):
+
+```bash
+# Calculate RCI between baseline (T1) and follow-up (T2)
+prism rci \
+  -i merged_data.csv \
+  --baseline depression_T1 \
+  --followup depression_T2 \
+  --reliability 0.85 \
+  --id ParticipantID \
+  -o rci_results.csv
+```
+
+**Understanding RCI Output:**
+
+The results include:
+
+- `rci_score` - The reliable change index value
+- `se_diff` - Standard error of difference
+- `change` - Raw change score (T2 - T1)
+- `percent_change` - Percentage change from baseline
+- `interpretation` - Clinical significance:
+  - **"Improved"** - RCI < -1.96 (clinically significant improvement)
+  - **"Deteriorated"** - RCI > 1.96 (clinically significant worsening)
+  - **"No reliable change"** - -1.96 ≤ RCI ≤ 1.96 (change within measurement error)
+
+**Formula:** `RCI = (X2 - X1) / SE_diff` where `SE_diff = SD * sqrt(2 * (1 - reliability))`
+
+**Custom Standard Deviation:**
+
+If you have normative data, use a specific baseline SD:
+
+```bash
+prism rci \
+  -i merged_data.csv \
+  --baseline depression_T1 \
+  --followup depression_T2 \
+  --reliability 0.85 \
+  --baseline-sd 8.5 \
+  --id ParticipantID \
+  -o rci_results.csv
+```
+
+### Real-World Example: Therapy Outcome Study
+
+Let's analyze a depression treatment study with pre/post/follow-up assessments:
+
+```bash
+# Step 1: Merge three assessment time points
+prism merge \
+  --waves Pre:baseline.csv Post:post_treatment.csv FU:followup_6mo.csv \
+  --id ParticipantID \
+  --join inner \
+  -o merged_therapy.csv
+
+# Step 2: Calculate RCI for treatment effect (Pre → Post)
+prism rci \
+  -i merged_therapy.csv \
+  --baseline PHQ9_Pre \
+  --followup PHQ9_Post \
+  --reliability 0.89 \
+  --id ParticipantID \
+  -o treatment_rci.csv
+
+# Step 3: Calculate RCI for maintenance (Post → FU)
+prism rci \
+  -i merged_therapy.csv \
+  --baseline PHQ9_Post \
+  --followup PHQ9_FU \
+  --reliability 0.89 \
+  --id ParticipantID \
+  -o maintenance_rci.csv
+
+# Step 4: Convert to long format for growth curve analysis
+prism reshape \
+  -i merged_therapy.csv \
+  --format wide-to-long \
+  --waves Pre Post FU \
+  --id ParticipantID \
+  -o long_therapy.csv
+```
+
+### Tips for Longitudinal Analysis
+
+**Best Practices:**
+
+1. **Always use `--id`** to specify your participant ID column
+2. **Use consistent wave names** (T1/T2/T3 or Pre/Post/FU)
+3. **Document reliability coefficients** - Use test-retest reliability from the scale manual
+4. **Check merge results** - Use `outer` join first to see who's missing data
+5. **Calculate RCI carefully** - Requires good reliability estimate (α ≥ 0.70 recommended)
+
+**Common Reliability Values:**
+
+- PHQ-9: 0.89 (Kroenke et al., 2001)
+- GAD-7: 0.83 (Spitzer et al., 2006)
+- PSS-10: 0.78 (Cohen & Williamson, 1988)
+- BDI-II: 0.93 (Beck et al., 1996)
+
+---
+
+## �📖 Need More Help?
 
 ### Quick Links
 

@@ -6,7 +6,8 @@ use log::{debug, info};
 use prism::{
     config::SurveyConfig,
     output::*,
-    processor::{get_participant_id, process_quality_checks, process_scale},
+    processor::{get_participant_id, process_quality_checks, process_scale, QualityCheckParams},
+    scales,
     stats::Stats,
     types::{OutputFormat, QualityIssue},
     validation::{generate_config_template, validate_batch_file, validate_config},
@@ -111,6 +112,99 @@ enum Commands {
         /// Generate a sample configuration template
         #[arg(long)]
         template: bool,
+
+        /// Generate config for a pre-built scale (PHQ-9, GAD-7, PSS-10, PSS-14, PANAS, BDI-II, BAI, SWLS)
+        #[arg(long)]
+        scale: Option<String>,
+
+        /// List all available pre-built scales
+        #[arg(long)]
+        list_scales: bool,
+
+        /// Show detailed information about a scale
+        #[arg(long)]
+        scale_info: Option<String>,
+    },
+
+    /// Merge multiple waves of longitudinal data
+    Merge {
+        /// Paths to wave files in format: wave1:file1.csv,wave2:file2.csv
+        #[arg(short, long, required = true, value_delimiter = ',')]
+        waves: Vec<String>,
+
+        /// ID column name for matching participants across waves
+        #[arg(short, long, default_value = "ParticipantID")]
+        id_column: String,
+
+        /// Output file path
+        #[arg(short, long)]
+        output: String,
+
+        /// Use inner join (only include participants in all waves)
+        #[arg(long)]
+        inner_join: bool,
+    },
+
+    /// Reshape data between wide and long formats
+    Reshape {
+        /// Input file path
+        #[arg(short, long)]
+        input: String,
+
+        /// Output file path
+        #[arg(short, long)]
+        output: String,
+
+        /// Target format (wide or long)
+        #[arg(short, long)]
+        format: String,
+
+        /// ID column name
+        #[arg(long, default_value = "ParticipantID")]
+        id_column: String,
+
+        /// Time/wave column name (required for long format)
+        #[arg(long, default_value = "Wave")]
+        time_column: String,
+
+        /// Wave names (comma-separated, e.g., T1,T2,T3)
+        #[arg(short, long, value_delimiter = ',')]
+        waves: Vec<String>,
+
+        /// Variable names to reshape (comma-separated, optional)
+        #[arg(long, value_delimiter = ',')]
+        variables: Vec<String>,
+    },
+
+    /// Calculate Reliable Change Index (RCI) between two time points
+    Rci {
+        /// Baseline (T1) data file
+        #[arg(short, long)]
+        baseline: String,
+
+        /// Follow-up (T2) data file
+        #[arg(short, long)]
+        followup: String,
+
+        /// Scale/variable name to analyze
+        #[arg(short, long)]
+        scale: String,
+
+        /// ID column name
+        #[arg(long, default_value = "ParticipantID")]
+        id_column: String,
+
+        /// Test-retest reliability coefficient (0-1)
+        #[arg(short, long)]
+        reliability: f64,
+
+        /// Baseline standard deviation (optional, will be calculated if not provided)
+        #[arg(long)]
+        baseline_sd: Option<f64>,
+
+        /// Output file path
+        #[arg(short, long)]
+        output: String,
     },
 }
 
@@ -157,10 +251,10 @@ fn main() -> Result<()> {
                 process_batch(&batch_path, &config, &output, stats_output, quality_report)?;
             } else {
                 let input = input.ok_or_else(|| anyhow::anyhow!("--input is required"))?;
-                process_file(
-                    &input,
-                    &config,
-                    &output,
+                process_file(ProcessingOptions {
+                    input,
+                    config_path: config,
+                    output,
                     stats_output,
                     quality_report,
                     dry_run,
@@ -168,16 +262,273 @@ fn main() -> Result<()> {
                     export_all,
                     format,
                     json_output,
-                    args.quiet,
-                )?;
+                    quiet: args.quiet,
+                })?;
             }
         }
         Commands::Validate { config, input } => {
             validate_command(&config, &input)?;
         }
-        Commands::Generate { template } => {
-            if template {
+        Commands::Generate {
+            template,
+            scale,
+            list_scales,
+            scale_info,
+        } => {
+            if list_scales {
+                println!("📚 Available Pre-built Scales:\n");
+                for scale_name in scales::list_available_scales() {
+                    if let Ok(metadata) = scales::get_scale_metadata(&scale_name) {
+                        println!("  • {} - {}", scale_name, metadata.full_name);
+                        println!(
+                            "    {} items, Citation: {}",
+                            metadata.num_items,
+                            metadata
+                                .citation
+                                .split('.')
+                                .next()
+                                .unwrap_or(&metadata.citation)
+                        );
+                        println!();
+                    }
+                }
+                println!("\nUsage:");
+                println!("  prism generate --scale PHQ-9 > phq9_config.toml");
+                println!("  prism generate --scale-info GAD-7");
+            } else if let Some(scale_id) = scale_info {
+                match scales::get_scale_metadata(&scale_id) {
+                    Ok(metadata) => {
+                        println!("\n{} ({})", metadata.name, metadata.full_name);
+                        println!("{}", "=".repeat(60));
+                        println!("\n📖 Description:");
+                        println!("  {}", metadata.description);
+                        println!("\n📝 Citation:");
+                        println!("  {}", metadata.citation);
+                        println!("\n🔢 Scale Details:");
+                        println!("  • Number of items: {}", metadata.num_items);
+                        println!(
+                            "  • Score range: {}-{}",
+                            metadata.min_score, metadata.max_score
+                        );
+                        println!("\n📊 Interpretation:");
+                        println!("  {}", metadata.interpretation);
+
+                        if let Some(norm_data) = metadata.normative_data {
+                            println!("\n📈 Normative Data ({}):", norm_data.population);
+                            println!("  • Mean: {:.2}, SD: {:.2}", norm_data.mean, norm_data.sd);
+                            if let Some(cutoff) = norm_data.clinical_cutoff {
+                                println!("  • Clinical cutoff: {:.2}", cutoff);
+                            }
+                            if !norm_data.severity_ranges.is_empty() {
+                                println!("\n  Severity Ranges:");
+                                for (label, min, max) in norm_data.severity_ranges {
+                                    println!("    • {}: {:.0}-{:.0}", label, min, max);
+                                }
+                            }
+                        }
+
+                        println!("\n💡 To generate config:");
+                        println!("  prism generate --scale {} > config.toml", metadata.name);
+                    }
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        eprintln!("\nRun 'prism generate --list-scales' to see available scales");
+                        std::process::exit(1);
+                    }
+                }
+            } else if let Some(scale_id) = scale {
+                match scales::generate_scale_config(&scale_id) {
+                    Ok(config) => {
+                        println!("{}", config);
+                    }
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        eprintln!("\nRun 'prism generate --list-scales' to see available scales");
+                        std::process::exit(1);
+                    }
+                }
+            } else if template {
                 println!("{}", generate_config_template());
+            } else {
+                eprintln!(
+                    "Error: Please specify --template, --scale, --list-scales, or --scale-info"
+                );
+                eprintln!("\nExamples:");
+                eprintln!("  prism generate --template");
+                eprintln!("  prism generate --list-scales");
+                eprintln!("  prism generate --scale PHQ-9");
+                eprintln!("  prism generate --scale-info GAD-7");
+                std::process::exit(1);
+            }
+        }
+        Commands::Merge {
+            waves,
+            id_column,
+            output,
+            inner_join,
+        } => {
+            use prism::longitudinal::{merge_waves, MergeParams};
+
+            // Parse wave specifications (format: "T1:file1.csv")
+            let wave_files: Result<Vec<(String, String)>, _> = waves
+                .iter()
+                .map(|spec| {
+                    // Split on first colon only to handle Windows paths like C:\path\file.csv
+                    if let Some(colon_pos) = spec.find(':') {
+                        let wave_name = &spec[..colon_pos];
+                        let file_path = &spec[colon_pos + 1..];
+
+                        if wave_name.is_empty() || file_path.is_empty() {
+                            Err(anyhow::anyhow!(
+                                "Invalid wave specification '{}'. Expected format: 'wave:file.csv'",
+                                spec
+                            ))
+                        } else {
+                            Ok((wave_name.to_string(), file_path.to_string()))
+                        }
+                    } else {
+                        Err(anyhow::anyhow!(
+                            "Invalid wave specification '{}'. Expected format: 'wave:file.csv'",
+                            spec
+                        ))
+                    }
+                })
+                .collect();
+
+            let wave_files = wave_files.context("Failed to parse wave specifications")?;
+
+            if wave_files.is_empty() {
+                eprintln!("Error: No wave files specified");
+                eprintln!("\nExample:");
+                eprintln!("  prism merge -w T1:data_t1.csv,T2:data_t2.csv -o merged.csv");
+                std::process::exit(1);
+            }
+
+            info!("Merging {} waves into {}", wave_files.len(), output);
+
+            let params = MergeParams {
+                wave_files,
+                id_column,
+                output_path: output,
+                inner_join,
+            };
+
+            match merge_waves(params) {
+                Ok(n) => {
+                    println!("✓ Successfully merged {} participants", n);
+                }
+                Err(e) => {
+                    eprintln!("Error merging waves: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Reshape {
+            input,
+            output,
+            format,
+            id_column,
+            time_column,
+            waves,
+            variables,
+        } => {
+            use prism::longitudinal::{reshape_data, DataFormat, ReshapeParams};
+
+            let target_format = match format.to_lowercase().as_str() {
+                "wide" => DataFormat::Wide,
+                "long" => DataFormat::Long,
+                _ => {
+                    eprintln!("Error: Format must be 'wide' or 'long'");
+                    std::process::exit(1);
+                }
+            };
+
+            if waves.is_empty() {
+                eprintln!("Error: Wave names must be specified (e.g., --waves T1,T2,T3)");
+                std::process::exit(1);
+            }
+
+            info!("Reshaping {} to {} format", input, format);
+
+            let params = ReshapeParams {
+                input_path: input,
+                output_path: output,
+                target_format,
+                id_column,
+                time_column,
+                variables,
+                waves,
+            };
+
+            match reshape_data(params) {
+                Ok(n) => {
+                    println!("✓ Successfully reshaped data ({} rows)", n);
+                }
+                Err(e) => {
+                    eprintln!("Error reshaping data: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Rci {
+            baseline,
+            followup,
+            scale,
+            id_column,
+            reliability,
+            baseline_sd,
+            output,
+        } => {
+            use prism::longitudinal::{calculate_rci, RCIParams};
+
+            if reliability < 0.0 || reliability > 1.0 {
+                eprintln!("Error: Reliability must be between 0 and 1");
+                std::process::exit(1);
+            }
+
+            info!(
+                "Calculating RCI for {} (reliability = {:.2})",
+                scale, reliability
+            );
+
+            let params = RCIParams {
+                baseline_path: baseline,
+                followup_path: followup,
+                scale_name: scale,
+                id_column,
+                reliability,
+                baseline_sd,
+                output_path: output.clone(),
+            };
+
+            match calculate_rci(params) {
+                Ok(results) => {
+                    let reliable_count = results.iter().filter(|r| r.is_reliable).count();
+                    let improved_count = results
+                        .iter()
+                        .filter(|r| r.direction == "decreased")
+                        .count();
+                    let worsened_count = results
+                        .iter()
+                        .filter(|r| r.direction == "increased")
+                        .count();
+
+                    println!("\n✓ RCI Analysis Complete");
+                    println!("{}", "=".repeat(50));
+                    println!("Total participants: {}", results.len());
+                    println!(
+                        "Reliable change: {} ({:.1}%)",
+                        reliable_count,
+                        (reliable_count as f64 / results.len() as f64) * 100.0
+                    );
+                    println!("  • Decreased: {}", improved_count);
+                    println!("  • Increased: {}", worsened_count);
+                    println!("\nResults saved to: {}", output);
+                }
+                Err(e) => {
+                    eprintln!("Error calculating RCI: {}", e);
+                    std::process::exit(1);
+                }
             }
         }
     }
@@ -185,10 +536,11 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn process_file(
-    input: &str,
-    config_path: &str,
-    output: &str,
+/// Configuration options for processing a file
+struct ProcessingOptions {
+    input: String,
+    config_path: String,
+    output: String,
     stats_output: Option<String>,
     quality_report: Option<String>,
     dry_run: bool,
@@ -197,32 +549,34 @@ fn process_file(
     format: OutputFormat,
     json_output: Option<String>,
     quiet: bool,
-) -> Result<()> {
+}
+
+fn process_file(options: ProcessingOptions) -> Result<()> {
     let start_time = Instant::now();
 
     // 1. Load Configuration
-    let config_content = fs::read_to_string(config_path).context(format!(
+    let config_content = fs::read_to_string(&options.config_path).context(format!(
         "Could not read config file '{}'. Check if the file exists and has .toml extension",
-        config_path
+        options.config_path
     ))?;
     let config: SurveyConfig = toml::from_str(&config_content).context(format!(
         "Could not parse TOML config from '{}'. Check for syntax errors",
-        config_path
+        options.config_path
     ))?;
 
     info!("✓ Configuration loaded successfully");
-    if !quiet {
+    if !options.quiet {
         println!(
             "\n{} Processing Survey: {}",
-            if dry_run { "[DRY RUN]" } else { "▸" },
+            if options.dry_run { "[DRY RUN]" } else { "▸" },
             config.survey.name
         );
     }
 
     // 2. Setup CSV Reader
-    let mut reader = csv::Reader::from_path(input).context(format!(
+    let mut reader = csv::Reader::from_path(&options.input).context(format!(
         "Could not open input CSV '{}'. Check if the file exists",
-        input
+        options.input
     ))?;
 
     info!("✓ Input CSV opened successfully");
@@ -245,15 +599,15 @@ fn process_file(
     debug!("Configured {} scales", config.scales.len());
 
     // Preview in dry run mode
-    if dry_run && !quiet {
+    if options.dry_run && !options.quiet {
         show_preview(&mut reader, &header_vec, &config)?;
         return Ok(());
     }
 
     // Prepare output
-    let mut writer = csv::Writer::from_path(output).context(format!(
+    let mut writer = csv::Writer::from_path(&options.output).context(format!(
         "Could not create output CSV '{}'. Check write permissions",
-        output
+        options.output
     ))?;
 
     let mut out_headers = headers.iter().map(|h| h.to_string()).collect::<Vec<_>>();
@@ -265,16 +619,24 @@ fn process_file(
     writer.write_record(&out_headers)?;
 
     // Determine output paths
-    let stats_path = if all_outputs {
-        Some(stats_output.unwrap_or_else(|| DEFAULT_STATS_FILE.to_string()))
+    let stats_path = if options.all_outputs {
+        Some(
+            options
+                .stats_output
+                .unwrap_or_else(|| DEFAULT_STATS_FILE.to_string()),
+        )
     } else {
-        stats_output
+        options.stats_output
     };
 
-    let quality_path = if all_outputs {
-        Some(quality_report.unwrap_or_else(|| DEFAULT_QUALITY_FILE.to_string()))
+    let quality_path = if options.all_outputs {
+        Some(
+            options
+                .quality_report
+                .unwrap_or_else(|| DEFAULT_QUALITY_FILE.to_string()),
+        )
     } else {
-        quality_report
+        options.quality_report
     };
 
     // 3. Process Each Participant
@@ -293,10 +655,10 @@ fn process_file(
         scale_scores.insert(scale_name.clone(), Vec::with_capacity(total_records));
         scale_items_matrix.insert(scale_name.clone(), Vec::with_capacity(total_records));
     }
-    let mut reader = csv::Reader::from_path(input)?; // Re-open after counting
+    let mut reader = csv::Reader::from_path(&options.input)?; // Re-open after counting
     reader.headers()?; // Skip headers
 
-    let pb = if !quiet {
+    let pb = if !options.quiet {
         let pb = ProgressBar::new(total_records as u64);
         pb.set_style(
             ProgressStyle::default_bar()
@@ -323,16 +685,16 @@ fn process_file(
                 process_scale(scale_def, &record, &header_map, &config)?;
 
             // Quality checks
-            process_quality_checks(
+            process_quality_checks(QualityCheckParams {
                 scale_name,
-                &scale_result,
+                scale_result: &scale_result,
                 missing_count,
-                scale_def.items.len(),
-                &participant_id,
-                &config,
-                &mut quality_flags,
-                &mut quality_issues,
-            );
+                total_items: scale_def.items.len(),
+                participant_id: &participant_id,
+                config: &config,
+                quality_flags: &mut quality_flags,
+                quality_issues: &mut quality_issues,
+            });
 
             // Record results
             if scale_result.valid_items > 0 {
@@ -401,7 +763,7 @@ fn process_file(
     let elapsed = start_time.elapsed();
 
     // Console output
-    if !quiet {
+    if !options.quiet {
         println!("\n{}", "═".repeat(50));
         println!("✓ Processing Complete");
         println!("{}", "═".repeat(50));
@@ -437,7 +799,7 @@ fn process_file(
         println!();
     }
 
-    info!("Output saved to: {}", output);
+    info!("Output saved to: {}", options.output);
 
     // 4. Generate additional outputs
     if let Some(stats_path) = &stats_path {
@@ -458,17 +820,17 @@ fn process_file(
     }
 
     // Export in different formats
-    if export_all {
+    if options.export_all {
         // Export to all formats when --export-all flag is used
         info!("Exporting to all formats...");
 
         // Excel
-        let excel_path = output.replace(".csv", ".xlsx");
+        let excel_path = options.output.replace(".csv", ".xlsx");
         generate_excel_output(&all_records, &out_headers, &excel_path)?;
         info!("Excel output saved to: {}", excel_path);
 
         // JSON
-        let json_path = output.replace(".csv", ".json");
+        let json_path = options.output.replace(".csv", ".json");
         generate_json_output(
             &config,
             &scale_scores,
@@ -479,26 +841,26 @@ fn process_file(
         info!("JSON output saved to: {}", json_path);
 
         // SPSS
-        let spss_path = output.replace(".csv", ".sps");
-        generate_spss_syntax(output, &config, &spss_path)?;
+        let spss_path = options.output.replace(".csv", ".sps");
+        generate_spss_syntax(&options.output, &config, &spss_path)?;
         info!("SPSS syntax saved to: {}", spss_path);
 
         // R
-        let r_path = output.replace(".csv", ".R");
-        generate_r_script(output, &config, &r_path)?;
+        let r_path = options.output.replace(".csv", ".R");
+        generate_r_script(&options.output, &config, &r_path)?;
         info!("R script saved to: {}", r_path);
 
         info!("✓ All formats exported successfully");
     } else {
         // Export in specified format only
-        match format {
+        match options.format {
             OutputFormat::Excel => {
-                let excel_path = output.replace(".csv", ".xlsx");
+                let excel_path = options.output.replace(".csv", ".xlsx");
                 generate_excel_output(&all_records, &out_headers, &excel_path)?;
                 info!("Excel output saved to: {}", excel_path);
             }
             OutputFormat::Json => {
-                if let Some(json_path) = json_output {
+                if let Some(json_path) = options.json_output {
                     generate_json_output(
                         &config,
                         &scale_scores,
@@ -510,13 +872,13 @@ fn process_file(
                 }
             }
             OutputFormat::Spss => {
-                let spss_path = output.replace(".csv", ".sps");
-                generate_spss_syntax(output, &config, &spss_path)?;
+                let spss_path = options.output.replace(".csv", ".sps");
+                generate_spss_syntax(&options.output, &config, &spss_path)?;
                 info!("SPSS syntax saved to: {}", spss_path);
             }
             OutputFormat::R => {
-                let r_path = output.replace(".csv", ".R");
-                generate_r_script(output, &config, &r_path)?;
+                let r_path = options.output.replace(".csv", ".R");
+                generate_r_script(&options.output, &config, &r_path)?;
                 info!("R script saved to: {}", r_path);
             }
             OutputFormat::Csv => {
@@ -611,19 +973,19 @@ fn process_batch(
             .as_ref()
             .map(|q| q.replace(".txt", &format!("_{}.txt", i + 1)));
 
-        process_file(
-            file,
-            config_path,
-            &output,
-            stats,
-            quality,
-            false,
-            true,
-            false, // export_all not used in batch mode
-            OutputFormat::Csv,
-            None,
-            true, // Quiet mode for batch
-        )?;
+        process_file(ProcessingOptions {
+            input: file.to_string(),
+            config_path: config_path.to_string(),
+            output,
+            stats_output: stats,
+            quality_report: quality,
+            dry_run: false,
+            all_outputs: true,
+            export_all: false, // export_all not used in batch mode
+            format: OutputFormat::Csv,
+            json_output: None,
+            quiet: true, // Quiet mode for batch
+        })?;
     }
 
     println!("\n✅ Batch processing complete!");
@@ -644,19 +1006,19 @@ fn run_benchmark(input: &Option<String>, config_path: &str) -> Result<()> {
         println!("Iteration {}/{}...", i, iterations);
         let start = Instant::now();
 
-        process_file(
-            input,
-            config_path,
-            "benchmark_output.csv",
-            None,
-            None,
-            false,
-            false,
-            false, // export_all not used in benchmark
-            OutputFormat::Csv,
-            None,
-            true,
-        )?;
+        process_file(ProcessingOptions {
+            input: input.to_string(),
+            config_path: config_path.to_string(),
+            output: "benchmark_output.csv".to_string(),
+            stats_output: None,
+            quality_report: None,
+            dry_run: false,
+            all_outputs: false,
+            export_all: false, // export_all not used in benchmark
+            format: OutputFormat::Csv,
+            json_output: None,
+            quiet: true,
+        })?;
 
         let elapsed = start.elapsed();
         times.push(elapsed.as_secs_f64());
@@ -698,12 +1060,12 @@ fn show_interactive_help_and_install() {
     println!("    ██╔═══╝ ██╔══██╗██║╚════██║██║╚██╔╝██║");
     println!("    ██║     ██║  ██║██║███████║██║ ╚═╝ ██║");
     println!("    ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝     ╚═╝");
-    println!("");
+    println!();
     println!("    ╔════════════════════════════════════════╗");
     println!("    ║   Survey Data Processor (CLI) v0.2.0  ║");
     println!("    ║   Psychology Research Made Simple     ║");
     println!("    ╚════════════════════════════════════════╝");
-    println!("");
+    println!();
 
     // Define installation directory
     let install_dir = std::env::var("LOCALAPPDATA")
@@ -729,12 +1091,12 @@ fn show_interactive_help_and_install() {
 
     if !is_installed || !is_in_path {
         println!("    ⚠️  Prism is not installed.");
-        println!("");
+        println!();
         println!("    📦 Installation will:");
         println!("       • Copy prism.exe to: {}", install_dir.display());
         println!("       • Add to PATH for global access");
         println!("       • Allow you to delete the downloaded file");
-        println!("");
+        println!();
         print!("    Would you like to install now? (Y/n): ");
         io::stdout().flush().unwrap();
 
@@ -750,7 +1112,7 @@ fn show_interactive_help_and_install() {
                     if let Some(current) = current_exe {
                         match fs::copy(&current, &install_path) {
                             Ok(_) => {
-                                println!("");
+                                println!();
                                 println!("    ✅ Copied to: {}", install_path.display());
 
                                 // Add to PATH
@@ -761,11 +1123,11 @@ fn show_interactive_help_and_install() {
                                             "    🔄 Please restart your terminal/command prompt."
                                         );
                                         println!("       Then you can use 'prism' from anywhere!");
-                                        println!("");
+                                        println!();
                                         println!(
                                             "    💡 You can now safely delete the downloaded file."
                                         );
-                                        println!("");
+                                        println!();
                                     }
                                     Err(e) => {
                                         println!("    ⚠️  Warning: Failed to add to PATH: {}", e);
@@ -773,61 +1135,61 @@ fn show_interactive_help_and_install() {
                                             "    You can still run: {}",
                                             install_path.display()
                                         );
-                                        println!("");
+                                        println!();
                                     }
                                 }
                             }
                             Err(e) => {
-                                println!("");
+                                println!();
                                 println!("    ❌ Failed to copy file: {}", e);
                                 println!("       Try running as administrator.");
-                                println!("");
+                                println!();
                             }
                         }
                     }
                 }
                 Err(e) => {
-                    println!("");
+                    println!();
                     println!("    ❌ Failed to create directory: {}", e);
                     println!("       Try running as administrator.");
-                    println!("");
+                    println!();
                 }
             }
         } else {
-            println!("");
+            println!();
             println!("    Installation skipped.");
             println!("    You can run prism using the full path:");
             if let Some(exe_path) = current_exe {
                 println!("    {}", exe_path.display());
             }
-            println!("");
+            println!();
         }
     } else {
         println!("    ✅ Prism is already installed!");
         println!("    📍 Location: {}", install_path.display());
-        println!("");
+        println!();
     }
 
     println!("    ┌─────────────────────────────────────────────────────────┐");
     println!("    │  📖  COMMON COMMANDS                                    │");
     println!("    └─────────────────────────────────────────────────────────┘");
-    println!("");
+    println!();
     println!("    ▸ Process data:");
     println!("      prism process -i data.csv -c config.toml -o clean.csv");
-    println!("");
+    println!();
     println!("    ▸ Validate config:");
     println!("      prism validate -c config.toml -i data.csv");
-    println!("");
+    println!();
     println!("    ▸ Generate template:");
     println!("      prism generate --template > config.toml");
-    println!("");
+    println!();
     println!("    ▸ Show all options:");
     println!("      prism --help");
-    println!("");
+    println!();
     println!("    ┌─────────────────────────────────────────────────────────┐");
     println!("    │  💡 TIP: For a graphical interface, use the GUI app    │");
     println!("    └─────────────────────────────────────────────────────────┘");
-    println!("");
+    println!();
 
     print!("Press Enter to exit...");
     io::stdout().flush().unwrap();

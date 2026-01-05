@@ -58,7 +58,7 @@ pub fn generate_summary_stats(
                 if scale_def
                     .reverse_scored
                     .as_ref()
-                    .map_or(false, |rev| rev.contains(item))
+                    .is_some_and(|rev| rev.contains(item))
                 {
                     write!(file, "{}*", item)?;
                 } else {
@@ -68,7 +68,7 @@ pub fn generate_summary_stats(
             if scale_def
                 .reverse_scored
                 .as_ref()
-                .map_or(false, |rev| !rev.is_empty())
+                .is_some_and(|rev| !rev.is_empty())
             {
                 writeln!(file, "  (* = reverse scored)")?;
             } else {
@@ -154,7 +154,7 @@ pub fn generate_quality_report(
         for issue in quality_issues {
             by_type
                 .entry(issue.issue_type.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(issue);
         }
 

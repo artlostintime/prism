@@ -1,27 +1,20 @@
+use crate::longitudinal::LongitudinalConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct SurveyConfig {
+    #[serde(default)]
     pub survey: SurveySettings,
     pub quality: Option<QualitySettings>,
+    #[serde(default)]
     pub scales: HashMap<String, ScaleDefinition>,
     #[serde(default)]
     pub column_mappings: Option<HashMap<String, String>>,
     #[serde(default)]
     pub output: Option<OutputSettings>,
-}
-
-impl Default for SurveyConfig {
-    fn default() -> Self {
-        Self {
-            survey: SurveySettings::default(),
-            quality: None,
-            scales: HashMap::new(),
-            column_mappings: None,
-            output: None,
-        }
-    }
+    #[serde(default)]
+    pub longitudinal: Option<LongitudinalConfig>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

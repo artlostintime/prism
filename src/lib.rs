@@ -26,9 +26,11 @@
 
 pub mod config;
 pub mod errors;
+pub mod longitudinal;
 pub mod output;
 pub mod processor;
 pub mod quality;
+pub mod scales;
 pub mod stats;
 pub mod types;
 pub mod validation;
@@ -36,6 +38,7 @@ pub mod validation;
 // Re-export commonly used types
 pub use config::SurveyConfig;
 pub use errors::{ProcessingError, Result};
+pub use scales::{NormativeData, ScaleMetadata};
 pub use types::{MissingPercent, OutputFormat, QualityIssue, ScaleResult, ScoreValue};
 
 // Constants

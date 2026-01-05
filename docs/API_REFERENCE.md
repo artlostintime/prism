@@ -22,10 +22,12 @@ This document provides technical reference for Prism's internal API, modules, an
 
 ## CLI Interface
 
-### Command-Line Arguments
+Prism provides multiple subcommands for different data processing tasks.
 
-```rust
-prism [OPTIONS]
+### Main Command: `process`
+
+```bash
+prism process [OPTIONS]
 ```
 
 **Required Arguments:**
@@ -38,18 +40,180 @@ prism [OPTIONS]
 
 **Optional Arguments:**
 
-| Flag               | Description                    | Type   | Default |
-| ------------------ | ------------------------------ | ------ | ------- |
-| `--stats-output`   | Summary statistics output path | String | None    |
-| `--quality-report` | Quality report output path     | String | None    |
-| `-h, --help`       | Print help information         | -      | -       |
-| `-V, --version`    | Print version information      | -      | -       |
+| Flag               | Description                           | Type   | Default |
+| ------------------ | ------------------------------------- | ------ | ------- |
+| `--stats-output`   | Summary statistics output path        | String | None    |
+| `--quality-report` | Quality report output path            | String | None    |
+| `--all-outputs`    | Generate all outputs                  | Flag   | false   |
+| `--export-all`     | Export all formats                    | Flag   | false   |
+| `--format`         | Output format (csv/excel/spss/r/json) | String | csv     |
+| `--dry-run`        | Preview without writing               | Flag   | false   |
+| `-h, --help`       | Print help information                | -      | -       |
 
 **Example:**
 
 ```bash
-prism -i data.csv -c config.toml -o output.csv \
+prism process -i data.csv -c config.toml -o output.csv \
   --stats-output stats.txt --quality-report quality.txt
+```
+
+### Longitudinal Commands (v0.3.0+)
+
+#### `merge` - Merge Multiple Waves
+
+Combine data from multiple time points by participant ID.
+
+```bash
+prism merge --waves <WAVE:FILE>... --id <ID_COLUMN> --join <TYPE> -o <OUTPUT>
+```
+
+**Required Arguments:**
+
+| Flag      | Description                     | Type                |
+| --------- | ------------------------------- | ------------------- |
+| `--waves` | Wave specifications (name:path) | String (repeatable) |
+| `--id`    | Participant ID column name      | String              |
+| `--join`  | Join type (inner/outer)         | String              |
+| `-o`      | Output CSV file path            | String              |
+
+**Example:**
+
+```bash
+prism merge \
+  --waves T1:baseline.csv T2:followup.csv T3:final.csv \
+  --id ParticipantID \
+  --join outer \
+  -o merged_data.csv
+```
+
+#### `reshape` - Convert Between Wide and Long Formats
+
+Transform data structure for different statistical analyses.
+
+```bash
+prism reshape -i <INPUT> --format <FORMAT> --waves <WAVES>... --id <ID> -o <OUTPUT>
+```
+
+**Required Arguments:**
+
+| Flag       | Description                                | Type                |
+| ---------- | ------------------------------------------ | ------------------- |
+| `-i`       | Input CSV file path                        | String              |
+| `--format` | Reshape format (wide-to-long/long-to-wide) | String              |
+| `--waves`  | Wave names (T1, T2, T3, etc.)              | String (repeatable) |
+| `--id`     | Participant ID column name                 | String              |
+| `-o`       | Output CSV file path                       | String              |
+
+**Optional Arguments:**
+
+| Flag         | Description                         | Type   | Default |
+| ------------ | ----------------------------------- | ------ | ------- |
+| `--time-col` | Time column name (for long-to-wide) | String | "Time"  |
+
+**Examples:**
+
+```bash
+# Wide to Long (for growth curve modeling)
+prism reshape \
+  -i wide_data.csv \
+  --format wide-to-long \
+  --waves T1 T2 T3 \
+  --id ParticipantID \
+  -o long_data.csv
+
+# Long to Wide (for repeated measures ANOVA)
+prism reshape \
+  -i long_data.csv \
+  --format long-to-wide \
+  --waves T1 T2 T3 \
+  --id ParticipantID \
+  --time-col Time \
+  -o wide_data.csv
+```
+
+#### `rci` - Calculate Reliable Change Index
+
+Determine clinically significant change between time points.
+
+```bash
+prism rci -i <INPUT> --baseline <COL> --followup <COL> --reliability <VALUE> --id <ID> -o <OUTPUT>
+```
+
+**Required Arguments:**
+
+| Flag            | Description                         | Type   |
+| --------------- | ----------------------------------- | ------ |
+| `-i`            | Input CSV file path                 | String |
+| `--baseline`    | Baseline score column name          | String |
+| `--followup`    | Follow-up score column name         | String |
+| `--reliability` | Test-retest reliability coefficient | Float  |
+| `--id`          | Participant ID column name          | String |
+| `-o`            | Output CSV file path                | String |
+
+**Optional Arguments:**
+
+| Flag            | Description                 | Type  | Default              |
+| --------------- | --------------------------- | ----- | -------------------- |
+| `--baseline-sd` | Baseline standard deviation | Float | Calculated from data |
+
+**Example:**
+
+```bash
+# Calculate RCI with reliability from scale manual
+prism rci \
+  -i merged_data.csv \
+  --baseline PHQ9_T1 \
+  --followup PHQ9_T2 \
+  --reliability 0.89 \
+  --id ParticipantID \
+  -o rci_results.csv
+
+# Calculate RCI with custom baseline SD
+prism rci \
+  -i merged_data.csv \
+  --baseline depression_T1 \
+  --followup depression_T2 \
+  --reliability 0.85 \
+  --baseline-sd 8.5 \
+  --id ParticipantID \
+  -o rci_results.csv
+```
+
+### Other Commands
+
+#### `generate` - Generate Configuration Templates
+
+```bash
+prism generate [OPTIONS]
+```
+
+**Options:**
+
+| Flag            | Description                        | Type   |
+| --------------- | ---------------------------------- | ------ |
+| `--template`    | Generate blank TOML template       | Flag   |
+| `--list-scales` | List all pre-built scales          | Flag   |
+| `--scale`       | Generate config for specific scale | String |
+| `--scale-info`  | Show detailed scale information    | String |
+
+**Example:**
+
+```bash
+prism generate --list-scales
+prism generate --scale PHQ-9 > phq9_config.toml
+prism generate --scale-info GAD-7
+```
+
+#### `validate` - Validate Configuration
+
+```bash
+prism validate -c <CONFIG> -i <INPUT>
+```
+
+**Example:**
+
+```bash
+prism validate -c config.toml -i data.csv
 ```
 
 ---
@@ -75,6 +239,56 @@ prism -i data.csv -c config.toml -o output.csv \
 use crate::config::SurveyConfig;
 
 let config = SurveyConfig::from_file("config.toml")?;
+```
+
+### `longitudinal` Module (v0.3.0+)
+
+**Location:** `src/longitudinal.rs`
+
+**Purpose:** Longitudinal data analysis and repeated measures processing.
+
+**Public Types:**
+
+- `LongitudinalConfig` - Configuration for longitudinal analyses
+- `MergeParams` - Parameters for merging multiple waves
+- `ReshapeParams` - Parameters for wide/long conversion
+- `RCIParams` - Parameters for reliable change index
+- `RCIResult` - Result structure for RCI calculations
+- `JoinType` - Enum for merge join types (Inner, Outer)
+- `ReshapeFormat` - Enum for reshape formats (WideToLong, LongToWide)
+
+**Public Functions:**
+
+```rust
+pub fn merge_waves(params: &MergeParams) -> Result<(), PrismError>
+// Merge multiple wave files by participant ID
+
+pub fn reshape_data(params: &ReshapeParams) -> Result<(), PrismError>
+// Convert between wide and long formats
+
+pub fn calculate_rci(params: &RCIParams) -> Result<(), PrismError>
+// Calculate reliable change index
+
+fn calculate_sd(values: &[f64]) -> f64
+// Helper function for standard deviation calculation
+```
+
+**Example Usage:**
+
+```rust
+use prism::longitudinal::{MergeParams, JoinType};
+
+let params = MergeParams {
+    wave_files: vec![
+        ("T1".to_string(), "baseline.csv".to_string()),
+        ("T2".to_string(), "followup.csv".to_string()),
+    ],
+    id_column: "ParticipantID".to_string(),
+    join_type: JoinType::Outer,
+    output_path: "merged.csv".to_string(),
+};
+
+merge_waves(&params)?;
 ```
 
 ### `main` Module
@@ -271,6 +485,176 @@ impl QualityIssue {
     // Create new quality issue
 }
 ```
+
+---
+
+### Longitudinal Data Structures (v0.3.0+)
+
+#### `LongitudinalConfig`
+
+**Definition:**
+
+```rust
+pub struct LongitudinalConfig {
+    pub waves: Vec<String>,
+    pub id_column: String,
+}
+```
+
+**Fields:**
+
+- `waves` - List of wave names (e.g., ["T1", "T2", "T3"])
+- `id_column` - Column containing participant IDs
+
+**Usage:** Optional field in `SurveyConfig` for longitudinal studies.
+
+---
+
+#### `MergeParams`
+
+**Definition:**
+
+```rust
+pub struct MergeParams {
+    pub wave_files: Vec<(String, String)>,
+    pub id_column: String,
+    pub join_type: JoinType,
+    pub output_path: String,
+}
+```
+
+**Fields:**
+
+- `wave_files` - Vector of (wave_name, file_path) tuples
+- `id_column` - Column name for participant IDs
+- `join_type` - JoinType enum (Inner or Outer)
+- `output_path` - Path for merged output CSV
+
+---
+
+#### `ReshapeParams`
+
+**Definition:**
+
+```rust
+pub struct ReshapeParams {
+    pub input_path: String,
+    pub output_path: String,
+    pub format: ReshapeFormat,
+    pub waves: Vec<String>,
+    pub id_column: String,
+    pub time_column: String,
+}
+```
+
+**Fields:**
+
+- `input_path` - Input CSV file path
+- `output_path` - Output CSV file path
+- `format` - ReshapeFormat enum (WideToLong or LongToWide)
+- `waves` - List of wave names
+- `id_column` - Column name for participant IDs
+- `time_column` - Column name for time variable (default: "Time")
+
+---
+
+#### `RCIParams`
+
+**Definition:**
+
+```rust
+pub struct RCIParams {
+    pub input_path: String,
+    pub output_path: String,
+    pub baseline_column: String,
+    pub followup_column: String,
+    pub id_column: String,
+    pub reliability: f64,
+    pub baseline_sd: Option<f64>,
+}
+```
+
+**Fields:**
+
+- `input_path` - Input CSV file path
+- `output_path` - Output CSV file path
+- `baseline_column` - Column name for baseline scores
+- `followup_column` - Column name for follow-up scores
+- `id_column` - Column name for participant IDs
+- `reliability` - Test-retest reliability coefficient (0.0 to 1.0)
+- `baseline_sd` - Optional custom baseline standard deviation
+
+---
+
+#### `RCIResult`
+
+**Definition:**
+
+```rust
+pub struct RCIResult {
+    pub participant_id: String,
+    pub baseline_score: f64,
+    pub followup_score: f64,
+    pub change: f64,
+    pub percent_change: f64,
+    pub rci_score: f64,
+    pub se_diff: f64,
+    pub interpretation: String,
+}
+```
+
+**Fields:**
+
+- `participant_id` - Participant identifier
+- `baseline_score` - Score at baseline (T1)
+- `followup_score` - Score at follow-up (T2)
+- `change` - Raw change score (T2 - T1)
+- `percent_change` - Percentage change from baseline
+- `rci_score` - Reliable change index value
+- `se_diff` - Standard error of difference
+- `interpretation` - Clinical interpretation ("Improved", "Deteriorated", or "No reliable change")
+
+**Interpretation Criteria:**
+
+- **RCI < -1.96**: "Improved" (clinically significant improvement)
+- **RCI > 1.96**: "Deteriorated" (clinically significant worsening)
+- **-1.96 ≤ RCI ≤ 1.96**: "No reliable change" (within measurement error)
+
+---
+
+#### `JoinType` (Enum)
+
+**Definition:**
+
+```rust
+pub enum JoinType {
+    Inner,
+    Outer,
+}
+```
+
+**Variants:**
+
+- `Inner` - Keep only participants present in all waves
+- `Outer` - Keep all participants from any wave
+
+---
+
+#### `ReshapeFormat` (Enum)
+
+**Definition:**
+
+```rust
+pub enum ReshapeFormat {
+    WideToLong,
+    LongToWide,
+}
+```
+
+**Variants:**
+
+- `WideToLong` - Convert wide format (var_T1, var_T2) to long format (Time, var)
+- `LongToWide` - Convert long format back to wide format
 
 ---
 

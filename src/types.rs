@@ -44,7 +44,7 @@ pub struct MissingPercent(pub f64);
 impl MissingPercent {
     pub fn new(value: f64) -> Self {
         assert!(
-            value >= 0.0 && value <= 1.0,
+            (0.0..=1.0).contains(&value),
             "MissingPercent must be between 0.0 and 1.0"
         );
         MissingPercent(value)

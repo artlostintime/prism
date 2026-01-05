@@ -8,12 +8,112 @@
 
 ### Planned Features
 
-- Cronbach's alpha calculation
 - Pattern responding detection (1-2-3-4 sequences)
 - Speeding detection (requires timing data)
 - Correlation matrices
-- SPSS syntax generation
-- Batch processing GUI
+- Advanced SPSS integration features
+- Batch processing GUI enhancements
+- Missing data imputation algorithms
+
+---
+
+## [0.3.0+] - 2026-01-05
+
+### Added - Longitudinal Data Support 🔄
+
+**New Module: `longitudinal`**
+
+- ✅ Multi-wave data merging with automatic ID matching
+- ✅ Wide-to-long format conversion for growth curve modeling
+- ✅ Long-to-wide format conversion for repeated measures ANOVA
+- ✅ Reliable Change Index (RCI) calculation with clinical interpretation
+- ✅ Support for inner and outer join types
+- ✅ Comprehensive error handling for longitudinal operations
+
+**New CLI Commands:**
+
+- `merge` - Merge multiple wave files by participant ID
+
+  - Supports inner/outer join types
+  - Handles missing participants gracefully
+  - Validates wave specifications
+
+- `reshape` - Convert between wide and long formats
+
+  - Wide-to-long: `var_T1, var_T2, var_T3` → multiple rows with `Time` column
+  - Long-to-wide: Reverse transformation with automatic variable detection
+  - Preserves all non-time-varying variables
+
+- `rci` - Calculate Reliable Change Index
+  - Formula: RCI = (X2 - X1) / SE_diff
+  - SE_diff = SD _ sqrt(2 _ (1 - reliability))
+  - Automatic clinical interpretation (Improved/Deteriorated/No reliable change)
+  - Supports custom baseline SD for normative comparisons
+  - Critical value: ±1.96 (p < .05)
+
+**Configuration:**
+
+- Added optional `[longitudinal]` section to TOML config
+- Supports wave specifications: `wave_name:file_path`
+- Configurable reliability coefficients for RCI calculations
+
+**Documentation:**
+
+- Updated [README.md](../README.md) with longitudinal examples
+- Extended [API_REFERENCE.md](API_REFERENCE.md) with new module documentation
+- Added longitudinal workflow to [HOW_TO_USE.md](HOW_TO_USE.md)
+- Updated [examples/README.md](../examples/README.md) with longitudinal examples
+
+**Testing:**
+
+- 11 new integration tests for longitudinal features
+- Test coverage for merge, reshape, and RCI operations
+- Error handling tests for invalid inputs
+- Windows path compatibility testing
+
+**Performance:**
+
+- Efficient CSV parsing with csv crate
+- Memory-efficient processing for large longitudinal datasets
+- Streaming I/O for minimal memory footprint
+
+---
+
+## [0.3.0] - 2026-01-03
+
+### Added - Pre-built Scale Libraries 📚
+
+**Scale Library System:**
+
+- ✅ Comprehensive pre-built scales with citations and normative data
+- ✅ PHQ-9 (Patient Health Questionnaire - Depression)
+- ✅ GAD-7 (Generalized Anxiety Disorder Scale)
+- ✅ PSS-10 and PSS-14 (Perceived Stress Scale)
+- ✅ PANAS (Positive and Negative Affect Schedule)
+- ✅ BDI-II (Beck Depression Inventory - II)
+- ✅ BAI (Beck Anxiety Inventory)
+- ✅ SWLS (Satisfaction With Life Scale)
+
+**New CLI Commands:**
+
+- `generate --list-scales` - List all available pre-built scales
+- `generate --scale <NAME>` - Generate config for specific scale
+- `generate --scale-info <NAME>` - Show detailed scale information with citations
+- `generate --template` - Generate blank configuration template
+
+**Scale Information:**
+
+- Full citations with authors and publication years
+- Scoring guidelines and interpretation ranges
+- Test-retest reliability coefficients
+- Internal consistency (Cronbach's alpha) values
+- Normative data where available
+
+**Documentation:**
+
+- Added scale library documentation to README
+- Examples for using pre-built scales
+- Citation information for academic use
 
 ---
 
@@ -28,6 +128,7 @@
 - ✅ Automatic reverse scoring
 - ✅ Scale total and mean calculation
 - ✅ Aggregate statistics (M, SD, min, max, N)
+- ✅ Cronbach's alpha calculation
 - ✅ Quality checks (straightlining, missing data, out-of-range)
 - ✅ Summary statistics report generation
 - ✅ Quality report generation

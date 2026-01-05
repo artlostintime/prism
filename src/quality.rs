@@ -25,7 +25,7 @@ pub fn check_missing_data(
     quality_issues: &mut Vec<QualityIssue>,
 ) {
     let missing_percent = MissingPercent::new(missing_count as f64 / total_items as f64);
-    
+
     if let Some(quality_settings) = &config.quality {
         if missing_percent.get() > quality_settings.max_missing_percent {
             let issue = format!(
@@ -59,7 +59,7 @@ pub fn check_straightlining(
     if !config
         .quality
         .as_ref()
-        .map_or(true, |q| q.flag_straightlining)
+        .is_none_or(|q| q.flag_straightlining)
     {
         return;
     }
@@ -113,10 +113,7 @@ pub fn check_low_variance(
                 / (n - 1.0);
 
             if variance < min_variance {
-                let issue = format!(
-                    "Low variance: {} (variance={:.3})",
-                    scale_name, variance
-                );
+                let issue = format!("Low variance: {} (variance={:.3})", scale_name, variance);
                 quality_flags.push(issue.clone());
                 quality_issues.push(QualityIssue::new(participant_id, "LowVariance", issue));
             }
