@@ -3,7 +3,7 @@ use std::fs;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use tauri::command;
+use tauri::{command, Manager};
 
 // COMMAND 1: Pick CSV File
 #[command]
@@ -108,7 +108,7 @@ fn save_config_text(config_text: String, csv_path: String) -> Result<String, Str
 
 // COMMAND 5: Run the Analysis Pipeline
 #[command]
-fn run_analysis(input_path: String, config_path: Option<String>) -> String {
+fn run_analysis(app: tauri::AppHandle, input_path: String, config_path: Option<String>) -> String {
     let input_path_obj = Path::new(&input_path);
 
     // Determine config path
@@ -133,30 +133,51 @@ fn run_analysis(input_path: String, config_path: Option<String>) -> String {
     // Determine CLI executable name based on OS
     let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
 
-    // Find the CLI binary
-    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("target")
-        .join("release")
-        .join(cli_name);
+    // Try to use bundled CLI binary first (production)
+    let cli_path = app
+        .path()
+        .resource_dir()
+        .ok()
+        .and_then(|resource_dir| {
+            let bundled = resource_dir.join(cli_name);
+            if bundled.exists() {
+                Some(bundled)
+            } else {
+                None
+            }
+        })
+        .or_else(|| {
+            // Fallback to development build location
+            let release_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("target")
+                .join("release")
+                .join(cli_name);
+            if release_path.exists() {
+                Some(release_path)
+            } else {
+                let debug_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("..")
+                    .join("target")
+                    .join("debug")
+                    .join(cli_name);
+                if debug_path.exists() {
+                    Some(debug_path)
+                } else {
+                    None
+                }
+            }
+        });
 
-    // Fallback to debug if release doesn't exist
-    let cli_path = if cli_path.exists() {
-        cli_path
-    } else {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("target")
-            .join("debug")
-            .join(cli_name)
+    let cli_path = match cli_path {
+        Some(path) => path,
+        None => {
+            return format!(
+                "Error: CLI binary not found.\n\nExpected bundled binary or development build at target/release/{}\n\nPlease build the CLI first: cargo build --release",
+                cli_name
+            )
+        }
     };
-
-    if !cli_path.exists() {
-        return format!(
-            "Error: CLI binary not found at {:?}\n\nPlease build the CLI first:\ncargo build --release",
-            cli_path
-        );
-    }
 
     // Determine smart output folder
     let output_folder = determine_output_folder(input_path_obj);
@@ -330,6 +351,7 @@ fn generate_scale_config(scale_id: String) -> Result<String, String> {
 // COMMAND 11: Generate multiple output formats
 #[command]
 fn run_analysis_multi_format(
+    app: tauri::AppHandle,
     input_path: String,
     config_path: String,
     formats: Vec<String>, // "csv", "excel", "spss", "r", "python", "html"
@@ -337,28 +359,51 @@ fn run_analysis_multi_format(
     let input_path_obj = Path::new(&input_path);
     let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
 
-    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("target")
-        .join("release")
-        .join(cli_name);
+    // Try to use bundled CLI binary first (production)
+    let cli_path = app
+        .path()
+        .resource_dir()
+        .ok()
+        .and_then(|resource_dir| {
+            let bundled = resource_dir.join(cli_name);
+            if bundled.exists() {
+                Some(bundled)
+            } else {
+                None
+            }
+        })
+        .or_else(|| {
+            // Fallback to development build location
+            let release_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("target")
+                .join("release")
+                .join(cli_name);
+            if release_path.exists() {
+                Some(release_path)
+            } else {
+                let debug_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("..")
+                    .join("target")
+                    .join("debug")
+                    .join(cli_name);
+                if debug_path.exists() {
+                    Some(debug_path)
+                } else {
+                    None
+                }
+            }
+        });
 
-    let cli_path = if cli_path.exists() {
-        cli_path
-    } else {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("target")
-            .join("debug")
-            .join(cli_name)
+    let cli_path = match cli_path {
+        Some(path) => path,
+        None => {
+            return Err(format!(
+                "CLI binary not found.\n\nExpected bundled binary or development build at target/release/{}\n\nPlease build the CLI first: cargo build --release",
+                cli_name
+            ))
+        }
     };
-
-    if !cli_path.exists() {
-        return Err(format!(
-            "CLI binary not found at {:?}\n\nPlease build first: cargo build --release",
-            cli_path
-        ));
-    }
 
     let output_folder = determine_output_folder(input_path_obj);
     fs::create_dir_all(&output_folder)
@@ -530,34 +575,58 @@ fn run_analysis_multi_format(
 // COMMAND 12: Generate Data Dictionary (v0.8.0)
 #[command]
 fn run_dictionary(
+    app: tauri::AppHandle,
     config_path: String,
     output_path: String,
     format: String,
 ) -> Result<String, String> {
     let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
 
-    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("target")
-        .join("release")
-        .join(cli_name);
+    // Try to use bundled CLI binary first (production)
+    let cli_path = app
+        .path()
+        .resource_dir()
+        .ok()
+        .and_then(|resource_dir| {
+            let bundled = resource_dir.join(cli_name);
+            if bundled.exists() {
+                Some(bundled)
+            } else {
+                None
+            }
+        })
+        .or_else(|| {
+            // Fallback to development build location
+            let release_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("target")
+                .join("release")
+                .join(cli_name);
+            if release_path.exists() {
+                Some(release_path)
+            } else {
+                let debug_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("..")
+                    .join("target")
+                    .join("debug")
+                    .join(cli_name);
+                if debug_path.exists() {
+                    Some(debug_path)
+                } else {
+                    None
+                }
+            }
+        });
 
-    let cli_path = if cli_path.exists() {
-        cli_path
-    } else {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("target")
-            .join("debug")
-            .join(cli_name)
+    let cli_path = match cli_path {
+        Some(path) => path,
+        None => {
+            return Err(format!(
+                "CLI binary not found.\n\nExpected bundled binary or development build at target/release/{}\n\nPlease build the CLI first: cargo build --release",
+                cli_name
+            ))
+        }
     };
-
-    if !cli_path.exists() {
-        return Err(format!(
-            "CLI binary not found at {:?}\n\nPlease build first: cargo build --release",
-            cli_path
-        ));
-    }
 
     let mut cmd = Command::new(&cli_path);
     cmd.arg("dictionary")
@@ -588,6 +657,7 @@ fn run_dictionary(
 // COMMAND 12: Generate CONSORT Flowchart (v0.8.0)
 #[command]
 fn run_consort(
+    app: tauri::AppHandle,
     input_path: String,
     config_path: String,
     output_path: String,
@@ -595,28 +665,51 @@ fn run_consort(
 ) -> Result<String, String> {
     let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
 
-    let cli_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("target")
-        .join("release")
-        .join(cli_name);
+    // Try to use bundled CLI binary first (production)
+    let cli_path = app
+        .path()
+        .resource_dir()
+        .ok()
+        .and_then(|resource_dir| {
+            let bundled = resource_dir.join(cli_name);
+            if bundled.exists() {
+                Some(bundled)
+            } else {
+                None
+            }
+        })
+        .or_else(|| {
+            // Fallback to development build location
+            let release_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("target")
+                .join("release")
+                .join(cli_name);
+            if release_path.exists() {
+                Some(release_path)
+            } else {
+                let debug_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("..")
+                    .join("target")
+                    .join("debug")
+                    .join(cli_name);
+                if debug_path.exists() {
+                    Some(debug_path)
+                } else {
+                    None
+                }
+            }
+        });
 
-    let cli_path = if cli_path.exists() {
-        cli_path
-    } else {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("target")
-            .join("debug")
-            .join(cli_name)
+    let cli_path = match cli_path {
+        Some(path) => path,
+        None => {
+            return Err(format!(
+                "CLI binary not found.\n\nExpected bundled binary or development build at target/release/{}\n\nPlease build the CLI first: cargo build --release",
+                cli_name
+            ))
+        }
     };
-
-    if !cli_path.exists() {
-        return Err(format!(
-            "CLI binary not found at {:?}\n\nPlease build first: cargo build --release",
-            cli_path
-        ));
-    }
 
     // First process the data
     let output_folder = Path::new(&output_path)

@@ -1,0 +1,68 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+type: software
+title: "Prism: Psychology Survey Data Processor"
+version: 0.8.6
+date-released: 2026-01-06
+url: "https://github.com/artlostintime/prism"
+repository-code: "https://github.com/artlostintime/prism"
+license: MIT
+keywords:
+  - psychology
+  - survey-data
+  - data-processing
+  - quality-control
+  - psychometrics
+  - statistical-analysis
+  - research-software
+  - cronbach-alpha
+  - longitudinal-analysis
+  - reliable-change-index
+abstract: "Prism is a comprehensive Rust-based tool for processing psychology survey data. It provides automated scale computation with reverse scoring, comprehensive quality checks (missing data, straightlining, pattern detection), statistical analysis (Cronbach's alpha, descriptive statistics), longitudinal analysis with Reliable Change Index (RCI) calculation, and multiple output formats including SPSS syntax, R scripts, Excel, and interactive HTML reports. Designed for researchers in psychology, psychiatry, and social sciences."
+authors:
+  - name: "Shuvi"
+preferred-citation:
+  type: software
+  title: "Prism: Psychology Survey Data Processor"
+  authors:
+    - name: "Shuvi"
+  version: 0.8.6
+  year: 2026
+  url: "https://github.com/artlostintime/prism"
+references:
+  - type: article
+    authors:
+      - family-names: "Cronbach"
+        given-names: "Lee J."
+    title: "Coefficient alpha and the internal structure of tests"
+    journal: "Psychometrika"
+    volume: 16
+    issue: 3
+    start: 297
+    end: 334
+    year: 1951
+    doi: "10.1007/BF02310555"
+  - type: article
+    authors:
+      - family-names: "Jacobson"
+        given-names: "Neil S."
+      - family-names: "Truax"
+        given-names: "Paula"
+    title: "Clinical significance: A statistical approach to defining meaningful change in psychotherapy research"
+    journal: "Journal of Consulting and Clinical Psychology"
+    volume: 59
+    issue: 1
+    start: 12
+    end: 19
+    year: 1991
+    doi: "10.1037/0022-006X.59.1.12"
+  - type: book
+    authors:
+      - family-names: "Cohen"
+        given-names: "Jacob"
+    title: "Statistical Power Analysis for the Behavioral Sciences"
+    edition: "2nd"
+    year: 1988
+    publisher:
+      name: "Lawrence Erlbaum Associates"
+    isbn: "0-8058-0283-5"

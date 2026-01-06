@@ -54,9 +54,16 @@ pub fn process_scale(
             .and_then(|m| m.get(item_name))
             .unwrap_or(item_name);
 
-        let idx = *header_map
-            .get(mapped_name)
-            .ok_or_else(|| ProcessingError::MissingColumn(item_name.to_string()))?; // Avoid clone
+        let idx = *header_map.get(mapped_name).ok_or_else(|| {
+            if mapped_name != item_name {
+                ProcessingError::MissingColumn(format!(
+                    "Column '{}' (mapped from item '{}')",
+                    mapped_name, item_name
+                ))
+            } else {
+                ProcessingError::MissingColumn(item_name.to_string())
+            }
+        })?;
 
         let val_str = &record[idx];
 

@@ -1,0 +1,19 @@
+[survey]
+name = "Edge Case Test"
+min_score = 0
+max_score = 3
+missing_threshold = 0.3
+
+[scales.PHQ9]
+items = ["PHQ1", "PHQ2", "PHQ3", "PHQ4", "PHQ5", "PHQ6", "PHQ7", "PHQ8", "PHQ9"]
+reverse_items = []
+
+[scales.GAD7]
+items = ["GAD1", "GAD2", "GAD3", "GAD4", "GAD5", "GAD6", "GAD7"]
+reverse_items = []
+
+[quality_checks]
+enable_missing_data = true
+enable_straightlining = true
+enable_pattern_detection = true
+enable_low_variance = true

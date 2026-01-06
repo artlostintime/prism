@@ -1,0 +1,116 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below.
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: Prism Version
+      description: Which version of Prism are you using?
+      options:
+        - v0.8.6 (latest)
+        - v0.8.5
+        - v0.8.4
+        - v0.8.3
+        - Other (please specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Interface
+      description: Are you using the CLI or GUI?
+      options:
+        - CLI
+        - GUI
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running? (e.g., Windows 11, macOS 14, Ubuntu 22.04)
+      placeholder: Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: When I try to process my data with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Run command `prism process -i data.csv -c config.toml`
+        2. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: I expected the data to be processed successfully...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Instead, I got an error message...
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration File (if relevant)
+      description: If the issue is related to configuration, paste your TOML config here
+      render: toml
+      placeholder: |
+        [scales.depression]
+        items = ["PHQ1", "PHQ2", "PHQ3"]
+        reverse_items = []
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Messages / Logs
+      description: Copy and paste any relevant error messages or log output
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: This only happens when I use scales with more than 20 items...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Data Privacy
+      description: By submitting this issue, you confirm that any data shared does not contain personally identifiable information (PII) or sensitive research data.
+      options:
+        - label: I have removed all PII and sensitive data from my examples
+          required: true

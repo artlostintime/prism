@@ -136,6 +136,9 @@ pub struct RCIResult {
 
 /// Merge multiple waves of data into a single wide-format dataset
 ///
+/// Takes data from multiple time points (waves) and combines them into a single
+/// dataset where each participant has one row with columns for each wave.
+///
 /// # Arguments
 /// * `params` - Merge parameters including file paths and join type
 ///
@@ -144,21 +147,38 @@ pub struct RCIResult {
 ///
 /// # Example
 /// ```no_run
-/// use prism::longitudinal::{MergeParams, merge_waves};
+/// use prism::longitudinal::{MergeParams, JoinType, merge_waves};
 ///
+/// // Merge baseline (T1) and 6-month followup (T2) data
 /// let params = MergeParams {
 ///     wave_files: vec![
-///         ("T1".to_string(), "data_t1.csv".to_string()),
-///         ("T2".to_string(), "data_t2.csv".to_string()),
+///         ("T1".to_string(), "data/baseline.csv".to_string()),
+///         ("T2".to_string(), "data/followup_6mo.csv".to_string()),
 ///     ],
-///     id_column: "ParticipantID".to_string(),
-///     output_path: "merged.csv".to_string(),
-///     inner_join: false,
+///     id_column: "participant_id".to_string(),
+///     join_type: JoinType::Inner,  // Only keep participants with data at both waves
+///     output_path: "data/merged_wide.csv".to_string(),
 /// };
 ///
-/// let n = merge_waves(params)?;
-/// println!("Merged {} participants", n);
-/// # Ok::<(), prism::errors::ProcessingError>(())
+/// match merge_waves(&params) {
+///     Ok(n) => println!("Successfully merged {} participants", n),
+///     Err(e) => eprintln!("Merge failed: {}", e),
+/// }
+/// ```
+///
+/// # Data Format
+/// Input files (T1 and T2):
+/// ```text
+/// participant_id,PHQ_total,GAD_total
+/// P001,12,8
+/// P002,5,3
+/// ```
+///
+/// Output (merged wide format):
+/// ```text
+/// participant_id,T1_PHQ_total,T1_GAD_total,T2_PHQ_total,T2_GAD_total
+/// P001,12,8,10,6
+/// P002,5,3,4,2
 /// ```
 pub fn merge_waves(params: MergeParams) -> Result<usize> {
     use csv::{Reader, Writer};
@@ -303,11 +323,68 @@ pub fn merge_waves(params: MergeParams) -> Result<usize> {
 
 /// Convert data between wide and long formats
 ///
+/// Reshapes longitudinal data to facilitate different types of analysis.
+///
 /// # Arguments
 /// * `params` - Reshape parameters including format direction and variable names
 ///
 /// # Returns
 /// Number of rows in the reshaped dataset
+///
+/// # Example: Wide to Long
+/// ```no_run
+/// use prism::longitudinal::{ReshapeParams, DataFormat, reshape_data};
+///
+/// // Convert wide format (one row per participant) to long format (multiple rows)
+/// let params = ReshapeParams {
+///     input_path: "data/merged_wide.csv".to_string(),
+///     output_path: "data/analysis_long.csv".to_string(),
+///     id_column: "participant_id".to_string(),
+///     time_column: "wave".to_string(),
+///     waves: vec!["T1".to_string(), "T2".to_string(), "T3".to_string()],
+///     target_format: DataFormat::Long,
+/// };
+///
+/// match reshape_data(params) {
+///     Ok(n) => println!("Created {} rows in long format", n),
+///     Err(e) => eprintln!("Reshape failed: {}", e),
+/// }
+/// ```
+///
+/// **Input (Wide format):**
+/// ```text
+/// participant_id,T1_PHQ_total,T2_PHQ_total,T3_PHQ_total
+/// P001,12,10,8
+/// P002,5,4,3
+/// ```
+///
+/// **Output (Long format):**
+/// ```text
+/// participant_id,wave,PHQ_total
+/// P001,T1,12
+/// P001,T2,10
+/// P001,T3,8
+/// P002,T1,5
+/// P002,T2,4
+/// P002,T3,3
+/// ```
+///
+/// # Example: Long to Wide
+/// ```no_run
+/// # use prism::longitudinal::{ReshapeParams, DataFormat, reshape_data};
+/// // Convert long format to wide format for cross-sectional analysis
+/// let params = ReshapeParams {
+///     input_path: "data/analysis_long.csv".to_string(),
+///     output_path: "data/cross_sectional.csv".to_string(),
+///     id_column: "participant_id".to_string(),
+///     time_column: "wave".to_string(),
+///     waves: vec![],  // Auto-detect from data
+///     target_format: DataFormat::Wide,
+/// };
+///
+/// reshape_data(params)?;
+/// # Ok::<(), prism::errors::ProcessingError>(())
+/// ```
 pub fn reshape_data(params: ReshapeParams) -> Result<usize> {
     match params.target_format {
         DataFormat::Long => wide_to_long(params),
@@ -509,16 +586,64 @@ fn long_to_wide(params: ReshapeParams) -> Result<usize> {
 
 /// Calculate Reliable Change Index (RCI) for longitudinal data
 ///
-/// RCI = (X2 - X1) / SE_diff
-/// where SE_diff = SD1 * sqrt(2 * (1 - r))
+/// The RCI determines whether the change in scores between two time points
+/// represents reliable change beyond measurement error. Based on Jacobson & Truax (1991).
 ///
-/// RCI > 1.96 indicates statistically reliable change (p < .05)
+/// # Formula
+/// ```text
+/// RCI = (X₂ - X₁) / SE_diff
+/// where SE_diff = SD₁ * √(2 * (1 - r_tt))
+/// ```
 ///
 /// # Arguments
 /// * `params` - RCI calculation parameters including reliability and file paths
 ///
 /// # Returns
 /// Vector of RCI results for all matched participants
+///
+/// # Example
+/// ```no_run
+/// use prism::longitudinal::{RCIParams, calculate_rci};
+///
+/// // Calculate RCI for PHQ-9 depression scores with test-retest reliability of 0.84
+/// let params = RCIParams {
+///     baseline_path: "data/T1_processed.csv".to_string(),
+///     followup_path: "data/T2_processed.csv".to_string(),
+///     scale_name: "PHQ9_total".to_string(),
+///     id_column: "participant_id".to_string(),
+///     reliability: 0.84,  // PHQ-9 test-retest reliability from Kroenke et al. (2001)
+///     baseline_sd: None,  // Will be calculated from data
+///     output_path: "data/rci_results.csv".to_string(),
+/// };
+///
+/// match calculate_rci(params) {
+///     Ok(results) => {
+///         let improved = results.iter().filter(|r| r.is_reliable && r.difference < 0.0).count();
+///         let worsened = results.iter().filter(|r| r.is_reliable && r.difference > 0.0).count();
+///         println!(\"{} improved, {} worsened reliably\", improved, worsened);
+///     }
+///     Err(e) => eprintln!(\"RCI calculation failed: {}\", e),
+/// }
+/// ```
+///
+/// # Interpretation
+/// - **RCI ≥ 1.96**: Reliable improvement (if negative) or worsening (if positive), p < .05
+/// - **|RCI| < 1.96**: No reliable change (within measurement error)
+///
+/// # Output Format
+/// ```text
+/// participant_id,baseline,followup,difference,rci,is_reliable,direction
+/// P001,15.0,8.0,-7.0,-2.45,true,improved
+/// P002,10.0,11.0,1.0,0.35,false,no_change
+/// P003,5.0,12.0,7.0,2.45,true,worsened
+/// ```
+///
+/// # References
+/// Jacobson, N. S., & Truax, P. (1991). Clinical significance: A statistical approach to
+/// defining meaningful change in psychotherapy research. *Journal of Consulting and
+/// Clinical Psychology, 59*(1), 12-19.
+///
+/// RCI > 1.96 indicates statistically reliable change (p < .05)
 pub fn calculate_rci(params: RCIParams) -> Result<Vec<RCIResult>> {
     use csv::Reader;
 
