@@ -1,4 +1,4 @@
-use assert_cmd::{cargo, Command};
+use assert_cmd::cargo;
 use std::fs;
 
 #[test]

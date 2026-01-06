@@ -1,11 +1,11 @@
 // Scale Library Validation Tests
 // Tests to ensure pre-built scales generate valid configurations
 
-use prism::scales::{get_available_scales, get_scale_config, get_scale_info};
+use prism::scales::{generate_scale_config, get_scale_metadata, list_available_scales};
 
 #[test]
 fn test_all_scales_available() {
-    let scales = get_available_scales();
+    let scales = list_available_scales();
     assert!(!scales.is_empty(), "Should have pre-built scales");
 
     // Verify expected scales exist
@@ -23,7 +23,7 @@ fn test_all_scales_available() {
 
 #[test]
 fn test_phq9_scale_config() {
-    let config = get_scale_config("PHQ-9").expect("PHQ-9 should exist");
+    let config = generate_scale_config("PHQ-9").expect("PHQ-9 should exist");
 
     // Verify scale structure
     assert!(
@@ -50,7 +50,7 @@ fn test_phq9_scale_config() {
 
 #[test]
 fn test_gad7_scale_config() {
-    let config = get_scale_config("GAD-7").expect("GAD-7 should exist");
+    let config = generate_scale_config("GAD-7").expect("GAD-7 should exist");
 
     // Verify scale structure
     assert!(
@@ -76,7 +76,7 @@ fn test_gad7_scale_config() {
 
 #[test]
 fn test_pss10_scale_config() {
-    let config = get_scale_config("PSS-10").expect("PSS-10 should exist");
+    let config = generate_scale_config("PSS-10").expect("PSS-10 should exist");
 
     // Verify scale structure
     assert!(
@@ -106,7 +106,7 @@ fn test_pss10_scale_config() {
 
 #[test]
 fn test_panas_scale_config() {
-    let config = get_scale_config("PANAS").expect("PANAS should exist");
+    let config = generate_scale_config("PANAS").expect("PANAS should exist");
 
     // PANAS has two subscales
     assert!(
@@ -167,7 +167,7 @@ fn test_scale_info_contains_metadata() {
 
     for scale_name in scales {
         let info =
-            get_scale_info(&scale_name).expect(&format!("Should get info for {}", scale_name));
+            get_scale_metadata(&scale_name).expect(&format!("Should get info for {}", scale_name));
 
         // Every scale should have basic metadata
         assert!(
@@ -202,8 +202,8 @@ fn test_scale_config_is_valid_toml() {
     let scales = get_available_scales();
 
     for scale_name in scales {
-        let config =
-            get_scale_config(&scale_name).expect(&format!("Should get config for {}", scale_name));
+        let config = generate_scale_config(&scale_name)
+            .expect(&format!("Should get config for {}", scale_name));
 
         // Try to parse as TOML
         let parsed: Result<toml::Value, _> = toml::from_str(&config);
@@ -229,8 +229,8 @@ fn test_scale_items_format_consistency() {
     let scales = get_available_scales();
 
     for scale_name in scales {
-        let config =
-            get_scale_config(&scale_name).expect(&format!("Should get config for {}", scale_name));
+        let config = generate_scale_config(&scale_name)
+            .expect(&format!("Should get config for {}", scale_name));
         let parsed: toml::Value = toml::from_str(&config).expect("Should parse TOML");
 
         if let Some(scales_section) = parsed.get("scales").and_then(|v| v.as_table()) {
@@ -282,7 +282,7 @@ fn test_scale_items_format_consistency() {
 
 #[test]
 fn test_scale_response_scale_format() {
-    let config = get_scale_config("PHQ-9").expect("Should get PHQ-9");
+    let config = generate_scale_config("PHQ-9").expect("Should get PHQ-9");
     let parsed: toml::Value = toml::from_str(&config).expect("Should parse TOML");
 
     // Check response scale format if present

@@ -1,12 +1,11 @@
-use assert_cmd::cargo::CommandCargoExt;
-use assert_cmd::Command;
+use assert_cmd::cargo;
 use predicates::prelude::*;
 use std::fs;
 use std::path::Path;
 
 #[test]
 fn test_cli_help() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("--help");
 
     cmd.assert()
@@ -16,7 +15,7 @@ fn test_cli_help() {
 
 #[test]
 fn test_cli_version() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("--version");
 
     cmd.assert()
@@ -31,7 +30,7 @@ fn test_process_sample_data() {
     // Clean up any existing output
     let _ = fs::remove_file(output_path);
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("examples/sample_data.csv")
@@ -66,7 +65,7 @@ fn test_process_with_stats_output() {
     let _ = fs::remove_file(output_path);
     let _ = fs::remove_file(stats_path);
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("examples/sample_data.csv")
@@ -103,7 +102,7 @@ fn test_process_with_quality_report() {
     let _ = fs::remove_file(output_path);
     let _ = fs::remove_file(quality_path);
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("examples/sample_data.csv")
@@ -130,7 +129,7 @@ fn test_process_with_quality_report() {
 
 #[test]
 fn test_missing_input_file() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("nonexistent.csv")
@@ -144,7 +143,7 @@ fn test_missing_input_file() {
 
 #[test]
 fn test_missing_config_file() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("examples/sample_data.csv")
@@ -165,7 +164,7 @@ fn test_straightlining_detection() {
     let _ = fs::remove_file(output_path);
     let _ = fs::remove_file(quality_path);
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("tests/fixtures/test_bad.csv")
@@ -203,7 +202,7 @@ fn test_all_outputs_together() {
     let _ = fs::remove_file(stats_path);
     let _ = fs::remove_file(quality_path);
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg("examples/sample_data.csv")
