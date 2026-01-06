@@ -1,6 +1,5 @@
 // tests/semantic_inconsistency_test.rs
 use prism::quality::check_semantic_inconsistency;
-use prism::types::QualityIssue;
 
 #[test]
 fn test_negative_correlation_both_high() {

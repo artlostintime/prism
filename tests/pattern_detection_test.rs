@@ -30,7 +30,7 @@ fn create_test_config() -> SurveyConfig {
 
 #[test]
 fn test_diagonal_pattern_ascending() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -51,7 +51,7 @@ fn test_diagonal_pattern_ascending() {
 
 #[test]
 fn test_diagonal_pattern_descending() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -72,7 +72,7 @@ fn test_diagonal_pattern_descending() {
 
 #[test]
 fn test_no_diagonal_pattern() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -91,7 +91,7 @@ fn test_no_diagonal_pattern() {
 
 #[test]
 fn test_alternating_pattern() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -112,7 +112,7 @@ fn test_alternating_pattern() {
 
 #[test]
 fn test_no_alternating_pattern() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -131,7 +131,7 @@ fn test_no_alternating_pattern() {
 
 #[test]
 fn test_block_pattern() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -152,7 +152,7 @@ fn test_block_pattern() {
 
 #[test]
 fn test_no_block_pattern_varied() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -171,7 +171,7 @@ fn test_no_block_pattern_varied() {
 
 #[test]
 fn test_no_block_pattern_same_value() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -248,7 +248,7 @@ fn test_response_time_acceptable() {
 
 #[test]
 fn test_short_sequence_no_diagonal() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -267,7 +267,7 @@ fn test_short_sequence_no_diagonal() {
 
 #[test]
 fn test_short_sequence_no_alternating() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 
@@ -286,7 +286,7 @@ fn test_short_sequence_no_alternating() {
 
 #[test]
 fn test_short_sequence_no_block() {
-    let config = create_test_config();
+    let _config = create_test_config();
     let mut quality_flags = Vec::new();
     let mut quality_issues = Vec::new();
 

@@ -1,5 +1,4 @@
-use assert_cmd::cargo::CommandCargoExt;
-use assert_cmd::Command;
+use assert_cmd::cargo;
 use std::fs;
 
 #[test]
@@ -32,7 +31,7 @@ fn test_invalid_config_missing_items() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -81,7 +80,7 @@ fn test_invalid_config_reverse_item_not_in_list() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -129,7 +128,7 @@ fn test_invalid_config_min_greater_than_max() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -181,7 +180,7 @@ fn test_valid_config_with_all_options() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -227,7 +226,7 @@ fn test_malformed_toml() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("-i")
         .arg(test_csv)
         .arg("-c")

@@ -1,5 +1,5 @@
 // tests/visualization_test.rs
-use assert_cmd::{cargo, Command};
+use assert_cmd::cargo;
 use std::fs;
 use tempfile::tempdir;
 

@@ -1,7 +1,7 @@
 // Comprehensive Edge Case and Stress Testing
 // Tests extreme values, boundary conditions, and potential bugs
 
-use assert_cmd::{cargo, Command};
+use assert_cmd::cargo;
 use std::fs;
 
 const EDGE_CASES_CSV: &str = "tests/fixtures/edge_cases.csv";

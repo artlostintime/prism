@@ -1,10 +1,9 @@
-use assert_cmd::cargo::CommandCargoExt;
-use assert_cmd::Command;
+use assert_cmd::cargo;
 use predicates::prelude::*;
 
 #[test]
 fn test_power_a_priori_independent_t() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")
@@ -26,7 +25,7 @@ fn test_power_a_priori_independent_t() {
 
 #[test]
 fn test_power_post_hoc_correlation() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("correlation")
@@ -48,7 +47,7 @@ fn test_power_post_hoc_correlation() {
 
 #[test]
 fn test_power_paired_t_small_effect() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("paired-t")
@@ -68,7 +67,7 @@ fn test_power_paired_t_small_effect() {
 
 #[test]
 fn test_power_one_tailed_test() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("one-sample-t")
@@ -89,7 +88,7 @@ fn test_power_one_tailed_test() {
 
 #[test]
 fn test_power_large_effect() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")
@@ -108,7 +107,7 @@ fn test_power_large_effect() {
 
 #[test]
 fn test_power_low_observed_power() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("correlation")
@@ -129,7 +128,7 @@ fn test_power_low_observed_power() {
 
 #[test]
 fn test_power_strict_alpha() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")
@@ -148,7 +147,7 @@ fn test_power_strict_alpha() {
 
 #[test]
 fn test_power_invalid_effect_size() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")
@@ -164,7 +163,7 @@ fn test_power_invalid_effect_size() {
 
 #[test]
 fn test_power_invalid_alpha() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")
@@ -182,7 +181,7 @@ fn test_power_invalid_alpha() {
 
 #[test]
 fn test_power_missing_required_params() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")
@@ -196,7 +195,7 @@ fn test_power_missing_required_params() {
 
 #[test]
 fn test_power_invalid_test_type() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("invalid-test")
@@ -218,7 +217,7 @@ fn test_power_output_file() {
     let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("power_results.txt");
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("paired-t")
@@ -240,7 +239,7 @@ fn test_power_output_file() {
 
 #[test]
 fn test_power_correlation_small_effect() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("correlation")
@@ -259,7 +258,7 @@ fn test_power_correlation_small_effect() {
 
 #[test]
 fn test_power_high_desired_power() {
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("power")
         .arg("--test")
         .arg("independent-t")

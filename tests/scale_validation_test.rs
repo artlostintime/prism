@@ -27,7 +27,7 @@ fn test_phq9_scale_config() {
 
     // Verify scale structure
     assert!(
-        config.contains("[scales.PHQ9]"),
+        config.contains("[scales.phq9_total]"),
         "Should have PHQ9 scale section"
     );
     assert!(config.contains("items = ["), "Should have items list");
@@ -54,7 +54,7 @@ fn test_gad7_scale_config() {
 
     // Verify scale structure
     assert!(
-        config.contains("[scales.GAD7]"),
+        config.contains("[scales.gad7_total]"),
         "Should have GAD7 scale section"
     );
 
@@ -80,7 +80,7 @@ fn test_pss10_scale_config() {
 
     // Verify scale structure
     assert!(
-        config.contains("[scales.PSS10]"),
+        config.contains("[scales.pss10_total]"),
         "Should have PSS10 scale section"
     );
 
@@ -163,25 +163,25 @@ fn test_panas_scale_config() {
 
 #[test]
 fn test_scale_info_contains_metadata() {
-    let scales = get_available_scales();
+    let scales = list_available_scales();
 
-    for scale_name in scales {
-        let info =
-            get_scale_metadata(&scale_name).expect(&format!("Should get info for {}", scale_name));
+    for scale_name in &scales {
+        let info = get_scale_metadata(scale_name)
+            .unwrap_or_else(|_| panic!("Should get info for {}", scale_name));
 
         // Every scale should have basic metadata
         assert!(
-            info.contains("Name:"),
+            !info.full_name.is_empty(),
             "Should have name for {}",
             scale_name
         );
         assert!(
-            info.contains("Items:"),
+            info.num_items > 0,
             "Should have item count for {}",
             scale_name
         );
         assert!(
-            info.contains("Description:"),
+            !info.description.is_empty(),
             "Should have description for {}",
             scale_name
         );
@@ -189,7 +189,7 @@ fn test_scale_info_contains_metadata() {
         // Most scales should have citations (except maybe custom ones)
         if scale_name != "Custom" {
             assert!(
-                info.contains("Citation:") || info.contains("Reference:"),
+                !info.citation.is_empty(),
                 "Should have citation for {}",
                 scale_name
             );
@@ -199,11 +199,11 @@ fn test_scale_info_contains_metadata() {
 
 #[test]
 fn test_scale_config_is_valid_toml() {
-    let scales = get_available_scales();
+    let scales = list_available_scales();
 
-    for scale_name in scales {
-        let config = generate_scale_config(&scale_name)
-            .expect(&format!("Should get config for {}", scale_name));
+    for scale_name in &scales {
+        let config = generate_scale_config(scale_name)
+            .unwrap_or_else(|_| panic!("Should get config for {}", scale_name));
 
         // Try to parse as TOML
         let parsed: Result<toml::Value, _> = toml::from_str(&config);
@@ -226,18 +226,18 @@ fn test_scale_config_is_valid_toml() {
 
 #[test]
 fn test_scale_items_format_consistency() {
-    let scales = get_available_scales();
+    let scales = list_available_scales();
 
-    for scale_name in scales {
-        let config = generate_scale_config(&scale_name)
-            .expect(&format!("Should get config for {}", scale_name));
+    for scale_name in &scales {
+        let config = generate_scale_config(scale_name)
+            .unwrap_or_else(|_| panic!("Should get config for {}", scale_name));
         let parsed: toml::Value = toml::from_str(&config).expect("Should parse TOML");
 
         if let Some(scales_section) = parsed.get("scales").and_then(|v| v.as_table()) {
             for (subscale_name, subscale_data) in scales_section {
                 let subscale_table = subscale_data
                     .as_table()
-                    .expect(&format!("Subscale {} should be a table", subscale_name));
+                    .unwrap_or_else(|| panic!("Subscale {} should be a table", subscale_name));
 
                 // Verify items field exists and is an array
                 assert!(
@@ -249,7 +249,7 @@ fn test_scale_items_format_consistency() {
                 let items = subscale_table
                     .get("items")
                     .and_then(|v| v.as_array())
-                    .expect(&format!("Items for {} should be an array", subscale_name));
+                    .unwrap_or_else(|| panic!("Items for {} should be an array", subscale_name));
 
                 assert!(
                     !items.is_empty(),

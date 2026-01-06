@@ -1,6 +1,5 @@
 // tests/longitudinal_test.rs
-use assert_cmd::cargo::CommandCargoExt;
-use assert_cmd::Command;
+use assert_cmd::cargo;
 use predicates::prelude::*;
 use std::fs;
 use tempfile::TempDir;
@@ -32,7 +31,7 @@ fn test_merge_waves_outer_join() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("merge")
         .arg("--waves")
         .arg(format!("T1:{}", t1_path.display()))
@@ -85,7 +84,7 @@ fn test_merge_waves_inner_join() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("merge")
         .arg("--waves")
         .arg(format!("T1:{}", t1_path.display()))
@@ -123,7 +122,7 @@ fn test_reshape_wide_to_long() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("reshape")
         .arg("--input")
         .arg(input_path.as_path())
@@ -165,7 +164,7 @@ fn test_reshape_long_to_wide() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("reshape")
         .arg("--input")
         .arg(input_path.as_path())
@@ -221,7 +220,7 @@ fn test_rci_calculation() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("rci")
         .arg("--baseline")
         .arg(baseline_path.as_path())
@@ -276,7 +275,7 @@ fn test_rci_with_baseline_sd() {
     )
     .unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("rci")
         .arg("--baseline")
         .arg(baseline_path.as_path())
@@ -301,7 +300,7 @@ fn test_merge_missing_wave_file() {
     let temp_dir = TempDir::new().unwrap();
     let output_path = temp_dir.path().join("merged.csv");
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("merge")
         .arg("--waves")
         .arg("T1:nonexistent.csv")
@@ -320,7 +319,7 @@ fn test_reshape_invalid_format() {
 
     fs::write(&input_path, "ID,value\nP001,10\n").unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("reshape")
         .arg("--input")
         .arg(input_path.as_path())
@@ -345,7 +344,7 @@ fn test_rci_invalid_reliability() {
     fs::write(&baseline_path, "ID,score\nP001,10\n").unwrap();
     fs::write(&followup_path, "ID,score\nP001,8\n").unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("rci")
         .arg("--baseline")
         .arg(baseline_path.as_path())
@@ -377,7 +376,7 @@ fn test_merge_three_waves() {
     fs::write(&t2_path, "ParticipantID,score\nP001,12\nP002,14\n").unwrap();
     fs::write(&t3_path, "ParticipantID,score\nP001,8\nP002,16\n").unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("merge")
         .arg("--waves")
         .arg(format!("T1:{}", t1_path.display()))
@@ -408,7 +407,7 @@ fn test_reshape_missing_waves() {
 
     fs::write(&input_path, "ID,value\nP001,10\n").unwrap();
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("reshape")
         .arg("--input")
         .arg(input_path.as_path())
