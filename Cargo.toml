@@ -1,6 +1,6 @@
 [package]
 name = "prism"
-version = "0.8.6"
+version = "0.8.7"
 edition = "2021"
 description = "Psychology survey data processing - Automated scoring, quality checks, and statistical reporting with Cronbach's alpha"
 authors = ["Shuvi"]

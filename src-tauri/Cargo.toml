@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.8.6"
+version = "0.8.7"
 description = "Prism GUI - Psychology survey data processor with modern interface"
 authors = ["Shuvi"]
 license = "MIT"
