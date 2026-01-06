@@ -1,6 +1,6 @@
 // tests/visualization_test.rs
-use assert_cmd::Command;
 use assert_cmd::cargo::CommandCargoExt;
+use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 use tempfile::tempdir;

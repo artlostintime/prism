@@ -44,11 +44,7 @@ pub fn calculate_percentage(count: usize, total: usize) -> f64 {
 /// assert_eq!(format_percentage(0, 0, 1), "0.0%");
 /// ```
 pub fn format_percentage(count: usize, total: usize, decimals: usize) -> String {
-    format!(
-        "{:.*}%",
-        decimals,
-        calculate_percentage(count, total)
-    )
+    format!("{:.*}%", decimals, calculate_percentage(count, total))
 }
 
 #[cfg(test)]
