@@ -5,14 +5,15 @@ use prism::processor::process_scale;
 use std::collections::HashMap;
 
 fn create_test_config() -> SurveyConfig {
-    let mut config = SurveyConfig::default();
-    config.survey = SurveySettings {
-        name: "Benchmark Test".to_string(),
-        min_score: 1,
-        max_score: 7,
-        participant_id_column: None,
-    };
-    config
+    SurveyConfig {
+        survey: SurveySettings {
+            name: "Benchmark Test".to_string(),
+            min_score: 1,
+            max_score: 7,
+            participant_id_column: None,
+        },
+        ..Default::default()
+    }
 }
 
 fn create_scale_def(n_items: usize, reverse_count: usize) -> ScaleDefinition {

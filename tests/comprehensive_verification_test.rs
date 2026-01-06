@@ -64,12 +64,14 @@ fn test_reverse_scoring_formula_correctness() {
     // For a 1-7 scale: reverse(x) = (7 + 1) - x = 8 - x
     // reverse(1) = 7, reverse(2) = 6, ..., reverse(7) = 1
 
-    let mut config = SurveyConfig::default();
-    config.survey = SurveySettings {
-        name: "Test".to_string(),
-        min_score: 1,
-        max_score: 7,
-        participant_id_column: Some("id".to_string()),
+    let config = SurveyConfig {
+        survey: SurveySettings {
+            name: "Test".to_string(),
+            min_score: 1,
+            max_score: 7,
+            participant_id_column: Some("id".to_string()),
+        },
+        ..Default::default()
     };
 
     let scale_def = ScaleDefinition {
@@ -168,7 +170,7 @@ fn test_negative_alpha_handling() {
 
     // Alpha should be clamped to [0, 1] range
     assert!(
-        alpha >= 0.0 && alpha <= 1.0,
+        (0.0..=1.0).contains(&alpha),
         "Alpha should be in [0,1] range, got {}",
         alpha
     );
@@ -192,12 +194,14 @@ fn test_floating_point_precision() {
 /// Test out-of-range value handling
 #[test]
 fn test_out_of_range_values_excluded() {
-    let mut config = SurveyConfig::default();
-    config.survey = SurveySettings {
-        name: "Test".to_string(),
-        min_score: 1,
-        max_score: 7,
-        participant_id_column: Some("id".to_string()),
+    let config = SurveyConfig {
+        survey: SurveySettings {
+            name: "Test".to_string(),
+            min_score: 1,
+            max_score: 7,
+            participant_id_column: Some("id".to_string()),
+        },
+        ..Default::default()
     };
 
     let scale_def = ScaleDefinition {
@@ -230,12 +234,14 @@ fn test_out_of_range_values_excluded() {
 /// Test missing data mean calculation
 #[test]
 fn test_missing_data_mean_calculation() {
-    let mut config = SurveyConfig::default();
-    config.survey = SurveySettings {
-        name: "Test".to_string(),
-        min_score: 1,
-        max_score: 7,
-        participant_id_column: Some("id".to_string()),
+    let config = SurveyConfig {
+        survey: SurveySettings {
+            name: "Test".to_string(),
+            min_score: 1,
+            max_score: 7,
+            participant_id_column: Some("id".to_string()),
+        },
+        ..Default::default()
     };
 
     let scale_def = ScaleDefinition {
@@ -286,7 +292,7 @@ fn test_cronbachs_alpha_minimum_items() {
     let alpha = calculate_cronbachs_alpha(&data);
 
     // Should produce valid alpha for 2 items
-    assert!(alpha >= 0.0 && alpha <= 1.0);
+    assert!((0.0..=1.0).contains(&alpha));
     assert!(
         alpha > 0.5,
         "Should show some reliability with correlated items"
