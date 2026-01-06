@@ -1,0 +1,8 @@
+[survey]
+name = "Reverse Boundary Test"
+min_score = 1
+max_score = 7
+
+[scales.test]
+items = ["q1", "q2", "q3"]
+reverse_scored = ["q2"]

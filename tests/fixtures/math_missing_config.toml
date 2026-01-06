@@ -1,0 +1,7 @@
+[survey]
+name = "Missing Data Test"
+min_score = 1
+max_score = 7
+
+[scales.test]
+items = ["q1", "q2", "q3", "q4", "q5"]

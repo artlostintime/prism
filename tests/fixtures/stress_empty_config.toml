@@ -1,0 +1,7 @@
+[survey]
+name = "Empty Test"
+min_score = 1
+max_score = 5
+
+[scales.test]
+items = ["q1"]

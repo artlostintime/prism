@@ -147,7 +147,7 @@ pub struct RCIResult {
 ///
 /// # Example
 /// ```no_run
-/// use prism::longitudinal::{MergeParams, JoinType, merge_waves};
+/// use prism::longitudinal::{MergeParams, merge_waves};
 ///
 /// // Merge baseline (T1) and 6-month followup (T2) data
 /// let params = MergeParams {
@@ -156,11 +156,11 @@ pub struct RCIResult {
 ///         ("T2".to_string(), "data/followup_6mo.csv".to_string()),
 ///     ],
 ///     id_column: "participant_id".to_string(),
-///     join_type: JoinType::Inner,  // Only keep participants with data at both waves
+///     inner_join: true,  // Only keep participants with data at both waves
 ///     output_path: "data/merged_wide.csv".to_string(),
 /// };
 ///
-/// match merge_waves(&params) {
+/// match merge_waves(params) {
 ///     Ok(n) => println!("Successfully merged {} participants", n),
 ///     Err(e) => eprintln!("Merge failed: {}", e),
 /// }
@@ -342,6 +342,7 @@ pub fn merge_waves(params: MergeParams) -> Result<usize> {
 ///     id_column: "participant_id".to_string(),
 ///     time_column: "wave".to_string(),
 ///     waves: vec!["T1".to_string(), "T2".to_string(), "T3".to_string()],
+///     variables: vec![],  // Auto-detect all variables
 ///     target_format: DataFormat::Long,
 /// };
 ///
@@ -379,6 +380,7 @@ pub fn merge_waves(params: MergeParams) -> Result<usize> {
 ///     id_column: "participant_id".to_string(),
 ///     time_column: "wave".to_string(),
 ///     waves: vec![],  // Auto-detect from data
+///     variables: vec![],  // Auto-detect all variables
 ///     target_format: DataFormat::Wide,
 /// };
 ///
@@ -620,9 +622,9 @@ fn long_to_wide(params: ReshapeParams) -> Result<usize> {
 ///     Ok(results) => {
 ///         let improved = results.iter().filter(|r| r.is_reliable && r.difference < 0.0).count();
 ///         let worsened = results.iter().filter(|r| r.is_reliable && r.difference > 0.0).count();
-///         println!(\"{} improved, {} worsened reliably\", improved, worsened);
+///         println!("{} improved, {} worsened reliably", improved, worsened);
 ///     }
-///     Err(e) => eprintln!(\"RCI calculation failed: {}\", e),
+///     Err(e) => eprintln!("RCI calculation failed: {}", e),
 /// }
 /// ```
 ///

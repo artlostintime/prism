@@ -1091,6 +1091,52 @@ cd src-tauri
 cargo tauri build
 ```
 
+---
+
+## 🧪 Testing & Development
+
+### Comprehensive Test Dataset
+
+Prism includes a large realistic test dataset (620 participants) with:
+
+- **11 psychology scales** (PHQ-9, GAD-7, PSS-10, PANAS, Wellbeing)
+- **Quality issues** (~900 intentionally injected for testing detection)
+- **Edge cases** (missing data, min/max values, patterns)
+
+**Quick test:**
+
+```bash
+python examples/generate_large_dataset.py
+.\test_large_dataset.ps1
+```
+
+**Or run manually:**
+
+```bash
+cargo run --release -- process \
+  -i data/test_dataset_large.csv \
+  -c test_large_config.toml \
+  -o data/processed/test_large_output.csv \
+  --stats-output data/processed/test_large_stats.txt \
+  --quality-report data/processed/test_large_quality.txt
+```
+
+📖 **See:** [examples/LARGE_DATASET_README.md](examples/LARGE_DATASET_README.md) for details
+
+### Run All Tests
+
+```bash
+cargo test --release
+```
+
+**Test coverage:** 227 tests covering:
+
+- Scale computation & reverse scoring
+- Quality detection (straightlining, patterns, missing data)
+- Statistical calculations (Cronbach's Alpha, M, SD)
+- Edge cases & error handling
+- Performance benchmarks
+
 ### Contributing
 
 1. Fork the repository

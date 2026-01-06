@@ -1,0 +1,7 @@
+[survey]
+name = "Empty Scale Test"
+min_score = 1
+max_score = 7
+
+[scales.test]
+items = []

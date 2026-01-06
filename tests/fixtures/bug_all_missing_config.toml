@@ -1,0 +1,11 @@
+[survey]
+name = "Division by Zero Test"
+min_score = 1
+max_score = 7
+
+[quality]
+max_missing_percent = 1.0
+flag_straightlining = true
+
+[scales.test]
+items = ["q1", "q2", "q3"]

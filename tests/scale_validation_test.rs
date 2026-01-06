@@ -43,8 +43,8 @@ fn test_phq9_scale_config() {
 
     // PHQ-9 has no reverse items
     assert!(
-        config.contains("reverse_items = []"),
-        "PHQ-9 should have no reverse items"
+        config.contains("reverse_scored = []"),
+        "PHQ-9 should have no reverse scored items"
     );
 }
 
@@ -69,8 +69,8 @@ fn test_gad7_scale_config() {
 
     // GAD-7 has no reverse items
     assert!(
-        config.contains("reverse_items = []"),
-        "GAD-7 should have no reverse items"
+        config.contains("reverse_scored = []"),
+        "GAD-7 should have no reverse scored items"
     );
 }
 
@@ -95,8 +95,8 @@ fn test_pss10_scale_config() {
 
     // PSS-10 has reverse scored items (4, 5, 7, 8)
     assert!(
-        config.contains("reverse_items = ["),
-        "PSS-10 should have reverse items"
+        config.contains("reverse_scored = ["),
+        "PSS-10 should have reverse scored items"
     );
     assert!(config.contains("\"PSS4\""), "Should reverse PSS4");
     assert!(config.contains("\"PSS5\""), "Should reverse PSS5");
@@ -110,43 +110,43 @@ fn test_panas_scale_config() {
 
     // PANAS has two subscales
     assert!(
-        config.contains("[scales.PANAS_Positive]"),
+        config.contains("[scales.panas_positive]"),
         "Should have positive affect subscale"
     );
     assert!(
-        config.contains("[scales.PANAS_Negative]"),
+        config.contains("[scales.panas_negative]"),
         "Should have negative affect subscale"
     );
 
     // Each subscale should have 10 items
     let positive_items = [
-        "interested",
-        "excited",
-        "strong",
-        "enthusiastic",
-        "proud",
-        "alert",
-        "inspired",
-        "determined",
-        "attentive",
-        "active",
+        "Interested",
+        "Excited",
+        "Strong",
+        "Enthusiastic",
+        "Proud",
+        "Alert",
+        "Inspired",
+        "Determined",
+        "Attentive",
+        "Active",
     ];
     let negative_items = [
-        "distressed",
-        "upset",
-        "guilty",
-        "scared",
-        "hostile",
-        "irritable",
-        "ashamed",
-        "nervous",
-        "jittery",
-        "afraid",
+        "Distressed",
+        "Upset",
+        "Guilty",
+        "Scared",
+        "Hostile",
+        "Irritable",
+        "Ashamed",
+        "Nervous",
+        "Jittery",
+        "Afraid",
     ];
 
     for item in &positive_items {
         assert!(
-            config.contains(&format!("\"PANAS_{}\"", item)) || config.contains(item),
+            config.contains(&format!("\"PANAS_{}\"", item)),
             "Should have positive item: {}",
             item
         );
@@ -154,7 +154,7 @@ fn test_panas_scale_config() {
 
     for item in &negative_items {
         assert!(
-            config.contains(&format!("\"PANAS_{}\"", item)) || config.contains(item),
+            config.contains(&format!("\"PANAS_{}\"", item)),
             "Should have negative item: {}",
             item
         );

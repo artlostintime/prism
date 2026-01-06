@@ -1,0 +1,8 @@
+[survey]
+name = "Reverse Score Test"
+min_score = 1
+max_score = 7
+
+[scales.test_scale]
+items = ["item1", "item2", "item3"]
+reverse_scored = ["item2"]

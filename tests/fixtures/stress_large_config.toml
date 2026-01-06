@@ -1,0 +1,7 @@
+[survey]
+name = "Large Dataset Test"
+min_score = 1
+max_score = 5
+
+[scales.test_scale]
+items = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10"]
