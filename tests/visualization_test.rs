@@ -1,7 +1,5 @@
 // tests/visualization_test.rs
-use assert_cmd::cargo::CommandCargoExt;
-use assert_cmd::Command;
-use predicates::prelude::*;
+use assert_cmd::{cargo, Command};
 use std::fs;
 use tempfile::tempdir;
 
@@ -11,9 +9,8 @@ fn test_html_report_generation() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -52,9 +49,8 @@ fn test_html_report_contains_overview_stats() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -96,9 +92,8 @@ fn test_html_report_contains_scale_statistics() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -152,9 +147,8 @@ fn test_html_report_contains_distribution_charts() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -200,9 +194,8 @@ fn test_html_report_contains_quality_issues() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -236,9 +229,8 @@ fn test_html_report_has_styling() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -277,9 +269,8 @@ fn test_html_report_has_header_and_footer() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -320,9 +311,8 @@ fn test_html_report_includes_survey_name() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",
@@ -353,9 +343,8 @@ fn test_html_report_chart_data_format() {
     let output_path = temp_dir.path().join("output.csv");
     let output_str = output_path.to_str().unwrap();
 
-    Command::cargo_bin("prism")
-        .unwrap()
-        .args(&[
+    cargo::cargo_bin_cmd!("prism")
+        .args([
             "process",
             "--config",
             "examples/study_config.toml",

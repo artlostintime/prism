@@ -1,5 +1,4 @@
-use assert_cmd::cargo::CommandCargoExt;
-use assert_cmd::Command;
+use assert_cmd::{cargo, Command};
 use std::fs;
 
 #[test]
@@ -37,7 +36,7 @@ fn test_reverse_scoring_calculation() {
     .unwrap();
 
     // Run processing
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -103,7 +102,7 @@ fn test_scale_total_calculation() {
     .unwrap();
 
     // Run processing
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -156,7 +155,7 @@ fn test_scale_mean_calculation() {
     .unwrap();
 
     // Run processing
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -215,7 +214,7 @@ fn test_aggregate_statistics() {
     .unwrap();
 
     // Run with stats output
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)
@@ -273,7 +272,7 @@ fn test_missing_data_handling() {
     .unwrap();
 
     // Run processing - should handle missing data gracefully
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("-i")
         .arg(test_csv)

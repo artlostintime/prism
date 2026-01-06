@@ -1,7 +1,7 @@
 // Comprehensive Edge Case and Stress Testing
 // Tests extreme values, boundary conditions, and potential bugs
 
-use assert_cmd::Command;
+use assert_cmd::{cargo, Command};
 use std::fs;
 
 const EDGE_CASES_CSV: &str = "tests/fixtures/edge_cases.csv";
@@ -13,7 +13,7 @@ const EXTREME_CONFIG: &str = "tests/fixtures/extreme_config.toml";
 fn test_all_zeros_handling() {
     let output_path = "tests/output/edge_all_zeros.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -44,7 +44,7 @@ fn test_all_zeros_handling() {
 fn test_all_max_values_handling() {
     let output_path = "tests/output/edge_all_max.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -74,7 +74,7 @@ fn test_completely_missing_data() {
     let output_path = "tests/output/edge_all_missing.csv";
     let quality_path = "tests/output/edge_all_missing_quality.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -104,7 +104,7 @@ fn test_completely_missing_data() {
 fn test_out_of_range_values() {
     let output_path = "tests/output/edge_out_of_range.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -129,7 +129,7 @@ fn test_alternating_pattern_detection() {
     let output_path = "tests/output/edge_alternating.csv";
     let quality_path = "tests/output/edge_alternating_quality.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -157,7 +157,7 @@ fn test_straightlining_detection() {
     let output_path = "tests/output/edge_straightlining.csv";
     let quality_path = "tests/output/edge_straightlining_quality.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -186,7 +186,7 @@ fn test_straightlining_detection() {
 fn test_decimal_values_handling() {
     let output_path = "tests/output/edge_decimals.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -212,7 +212,7 @@ fn test_decimal_values_handling() {
 fn test_various_null_representations() {
     let output_path = "tests/output/edge_nulls.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -235,7 +235,7 @@ fn test_reverse_scoring_with_extremes() {
     let output_path = "tests/output/extreme_reverse.csv";
     let stats_path = "tests/output/extreme_reverse_stats.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EXTREME_VALUES_CSV)
@@ -268,7 +268,7 @@ fn test_reverse_scoring_with_extremes() {
 fn test_negative_values_handling() {
     let output_path = "tests/output/extreme_negative.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EXTREME_VALUES_CSV)
@@ -287,7 +287,7 @@ fn test_negative_values_handling() {
 fn test_excessively_large_values() {
     let output_path = "tests/output/extreme_large.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EXTREME_VALUES_CSV)
@@ -310,7 +310,7 @@ fn test_partial_missing_data_threshold() {
     let output_path = "tests/output/extreme_partial_missing.csv";
     let quality_path = "tests/output/extreme_partial_missing_quality.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EXTREME_VALUES_CSV)
@@ -339,7 +339,7 @@ fn test_partial_missing_data_threshold() {
 fn test_special_string_values() {
     let output_path = "tests/output/extreme_special_strings.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EXTREME_VALUES_CSV)
@@ -361,7 +361,7 @@ fn test_special_string_values() {
 fn test_statistical_accuracy_all_zeros() {
     let stats_path = "tests/output/edge_stats_zeros.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -386,7 +386,7 @@ fn test_statistical_accuracy_all_zeros() {
 fn test_statistical_accuracy_no_variance() {
     let stats_path = "tests/output/edge_stats_no_variance.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -413,7 +413,7 @@ fn test_statistical_accuracy_no_variance() {
 fn test_missing_data_in_different_positions() {
     let output_path = "tests/output/extreme_missing_positions.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EXTREME_VALUES_CSV)
@@ -445,7 +445,7 @@ fn test_cronbach_alpha_with_two_participants() {
     let output_path = "tests/output/edge_cronbach_min.csv";
     let stats_path = "tests/output/edge_cronbach_min_stats.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -473,7 +473,7 @@ fn test_diagonal_pattern_detection() {
     let output_path = "tests/output/edge_diagonal.csv";
     let quality_path = "tests/output/edge_diagonal_quality.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -504,7 +504,7 @@ fn test_output_directory_creation() {
 
     let output_path = format!("{}/test.csv", test_dir);
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -524,7 +524,7 @@ fn test_empty_reverse_items_list() {
     // PHQ9 and GAD7 have no reverse items
     let output_path = "tests/output/edge_no_reverse.csv";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -546,7 +546,7 @@ fn test_empty_reverse_items_list() {
 fn test_quality_report_formatting() {
     let quality_path = "tests/output/edge_quality_format.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
@@ -573,7 +573,7 @@ fn test_quality_report_formatting() {
 fn test_stats_report_formatting() {
     let stats_path = "tests/output/edge_stats_format.txt";
 
-    let mut cmd = Command::cargo_bin("prism").unwrap();
+    let mut cmd = cargo::cargo_bin_cmd!("prism");
     cmd.arg("process")
         .arg("--input")
         .arg(EDGE_CASES_CSV)
