@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **🔴 GUI Critical Fix - Tauri API Initialization**
+  - Fixed Calculate Power and Merge Longitudinal buttons not responding to clicks
+  - Root cause: JavaScript attempted to use Tauri API before it was fully loaded
+  - Added `waitForTauri()` polling function with 5-second timeout
+  - Added safety checks in `calculatePower()` and `mergeLongitudinal()` functions
+  - Modified initialization to wait for Tauri runtime before setup
+  - Impact: All Analysis Tools tab features now work reliably on app launch
+
 ## [0.8.5] - 2026-01-06
 
 ### Fixed (CRITICAL)

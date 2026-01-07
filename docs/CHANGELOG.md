@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **GUI Critical Fix - Tauri API Initialization** (2026-01-07)
+  - Fixed Calculate Power and Merge Longitudinal buttons not responding
+  - Added proper Tauri API loading with polling mechanism
+  - Improved error handling for async Tauri operations
+  - All Analysis Tools tab features now work reliably
+
 ### Planned Features
 
 - Pattern responding detection (1-2-3-4 sequences)
@@ -46,7 +54,7 @@
 
 - `rci` - Calculate Reliable Change Index
   - Formula: RCI = (X2 - X1) / SE_diff
-  - SE_diff = SD _ sqrt(2 _ (1 - reliability))
+  - SE*diff = SD * sqrt(2 \_ (1 - reliability))
   - Automatic clinical interpretation (Improved/Deteriorated/No reliable change)
   - Supports custom baseline SD for normative comparisons
   - Critical value: ±1.96 (p < .05)
