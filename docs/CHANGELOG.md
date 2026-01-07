@@ -6,14 +6,6 @@
 
 ## [Unreleased]
 
-### Fixed
-
-- **GUI Critical Fix - Tauri API Initialization** (2026-01-07)
-  - Fixed Calculate Power and Merge Longitudinal buttons not responding
-  - Added proper Tauri API loading with polling mechanism
-  - Improved error handling for async Tauri operations
-  - All Analysis Tools tab features now work reliably
-
 ### Planned Features
 
 - Pattern responding detection (1-2-3-4 sequences)
@@ -22,6 +14,18 @@
 - Advanced SPSS integration features
 - Batch processing GUI enhancements
 - Missing data imputation algorithms
+
+---
+
+## [0.8.8] - 2026-01-07
+
+### Fixed
+
+- **GUI Critical Fix - Tauri API Initialization**
+  - Fixed Calculate Power and Merge Longitudinal buttons not responding
+  - Added proper Tauri API loading with polling mechanism
+  - Improved error handling for async Tauri operations
+  - All Analysis Tools tab features now work reliably
 
 ---
 
