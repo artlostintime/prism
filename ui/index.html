@@ -1145,6 +1145,106 @@
       <!-- Status Display -->
       <div id="status"></div>
 
+      <!-- Data Preview Section -->
+      <div id="dataPreviewSection" style="display: none; margin-top: 1.5rem">
+        <div class="section-header">
+          <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary)">
+            📊 Data Preview
+          </h3>
+          <button
+            onclick="toggleDataPreview()"
+            style="
+              background: none;
+              border: none;
+              font-size: 1.2rem;
+              cursor: pointer;
+            "
+          >
+            ▼
+          </button>
+        </div>
+        <div
+          id="dataPreviewContent"
+          style="
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow: auto;
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+          "
+        >
+          <div style="text-align: center; color: var(--text-light)">
+            Loading preview...
+          </div>
+        </div>
+      </div>
+
+      <!-- HTML Report Viewer Section -->
+      <div id="reportViewerSection" style="display: none; margin-top: 1.5rem">
+        <div class="section-header" style="margin-bottom: 0.5rem">
+          <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary)">
+            📈 Analysis Report
+          </h3>
+          <div style="display: flex; gap: 0.5rem">
+            <button
+              onclick="openReportExternal()"
+              class="btn-secondary"
+              style="padding: 0.5rem 1rem; font-size: 0.85rem"
+            >
+              🌐 Open in Browser
+            </button>
+            <button
+              onclick="toggleReportViewer()"
+              style="
+                background: none;
+                border: none;
+                font-size: 1.2rem;
+                cursor: pointer;
+              "
+            >
+              ▼
+            </button>
+          </div>
+        </div>
+        <div id="reportViewerContent" style="margin-top: 1rem">
+          <iframe
+            id="reportIframe"
+            src="about:blank"
+            style="
+              width: 100%;
+              height: 600px;
+              border: 2px solid var(--border);
+              border-radius: 8px;
+              background: white;
+              display: none;
+            "
+          ></iframe>
+          <div
+            id="reportPlaceholder"
+            style="
+              padding: 3rem;
+              text-align: center;
+              color: var(--text-light);
+              background: var(--bg-light);
+              border: 2px dashed var(--border);
+              border-radius: 8px;
+            "
+          >
+            <div style="font-size: 3rem; margin-bottom: 1rem">📊</div>
+            <div style="font-size: 1.1rem; margin-bottom: 0.5rem">
+              No report generated yet
+            </div>
+            <div style="font-size: 0.9rem">
+              Make sure to select "📈 HTML Report" in output formats and process
+              your data
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Keyboard Shortcuts -->
       <div class="shortcuts">
         💡 <span class="kbd">Ctrl</span> + <span class="kbd">O</span> Open CSV •
@@ -1462,15 +1562,21 @@
             <div class="file-name">${fileName}</div>
             ${stats}
           </div>
-          <div style="margin-top: 1rem;">
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+            <button onclick="event.stopPropagation(); showDataPreview()" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;">
+              👀 Preview Data
+            </button>
             <button onclick="event.stopPropagation(); resetCSVSelection()" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;">
-              🔄 Choose Different File
+              🔄 Change File
             </button>
           </div>
         `;
 
         updateOutputLocation(filePath);
         updateProcessButton();
+
+        // Auto-show preview
+        setTimeout(() => showDataPreview(), 300);
       }
 
       function resetCSVSelection() {
@@ -1712,11 +1818,11 @@
           if (result.includes("Success") || result.includes("✅")) {
             const enhancedResult =
               result +
-              `\n\n🎉 New in v0.8.0: Your data was checked for 8 quality categories including pattern detection!\n\n` +
+              `\n\n🎉 Processing complete! View your results below.\n\n` +
               `<div class="status-actions">` +
               `<button class="btn-status" onclick="openOutputFolder()">📁 Open Folder</button>` +
-              `<button class="btn-status" onclick="generateDictionary()">📖 Data Dictionary</button>` +
-              `<button class="btn-status" onclick="generateConsort()">📊 CONSORT Report</button>` +
+              `<button class="btn-status" onclick="showReportViewer()">📊 View Report</button>` +
+              `<button class="btn-status" onclick="generateDictionary()">📖 Dictionary</button>` +
               `</div>`;
             showStatus(enhancedResult, "success");
 
@@ -1726,23 +1832,10 @@
               openBtn.disabled = false;
             }
 
-            // Add action buttons
-            setTimeout(() => {
-              const statusDiv = document.getElementById("status");
-              if (statusDiv && !statusDiv.querySelector(".status-actions")) {
-                const actions = document.createElement("div");
-                actions.className = "status-actions";
-                actions.innerHTML = `
-                  <button class="btn-status" onclick="openOutputFolder()" style="color: var(--success); font-weight: 600;">
-                    📂 Open Output Folder
-                  </button>
-                  <button class="btn-status" onclick="resetForNewAnalysis()" style="color: var(--primary);">
-                    🔄 Process Another File
-                  </button>
-                `;
-                statusDiv.appendChild(actions);
-              }
-            }, 100);
+            // Auto-show report viewer if HTML was generated
+            if (document.getElementById("outputHTML").checked) {
+              setTimeout(() => showReportViewer(), 500);
+            }
           } else {
             showStatus(result, "error");
           }
@@ -1802,6 +1895,232 @@
         statusEl.className = "show " + type;
         statusEl.innerHTML = message;
       }
+
+      // DATA PREVIEW FUNCTIONS
+      async function showDataPreview() {
+        if (!csvFilePath) return;
+
+        const previewSection = document.getElementById("dataPreviewSection");
+        const previewContent = document.getElementById("dataPreviewContent");
+
+        previewSection.style.display = "block";
+        previewContent.innerHTML =
+          '<div style="text-align: center; color: var(--text-light); padding: 2rem;">📊 Loading preview...</div>';
+
+        try {
+          const previewData = await window.__TAURI__.core.invoke(
+            "preview_csv_data",
+            {
+              csvPath: csvFilePath,
+            }
+          );
+
+          const lines = previewData.split("\n");
+          if (lines.length === 0) {
+            previewContent.innerHTML =
+              '<div style="color: var(--error);">No data to preview</div>';
+            return;
+          }
+
+          // Create HTML table
+          const headers = lines[0].split(",");
+          let tableHTML =
+            '<table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">';
+
+          // Header row
+          tableHTML +=
+            '<thead><tr style="background: var(--primary); color: white;">';
+          headers.forEach((header) => {
+            tableHTML += `<th style="padding: 0.5rem; text-align: left; border: 1px solid var(--border);">${header.trim()}</th>`;
+          });
+          tableHTML += "</tr></thead><tbody>";
+
+          // Data rows (up to 10)
+          for (let i = 1; i < Math.min(lines.length, 11); i++) {
+            const cells = lines[i].split(",");
+            tableHTML += '<tr style="background: var(--bg-card);">';
+            cells.forEach((cell) => {
+              const cellValue = cell.trim();
+              const isNumber = !isNaN(cellValue) && cellValue !== "";
+              const isMissing =
+                cellValue === "" || cellValue === "NA" || cellValue === "NULL";
+
+              let style = "padding: 0.5rem; border: 1px solid var(--border);";
+              if (isNumber) style += " font-weight: 500; color: var(--info);";
+              if (isMissing)
+                style += " color: var(--error); font-style: italic;";
+
+              tableHTML += `<td style="${style}">${
+                cellValue || "<em>(empty)</em>"
+              }</td>`;
+            });
+            tableHTML += "</tr>";
+          }
+
+          tableHTML += "</tbody></table>";
+          tableHTML += `<div style="margin-top: 1rem; text-align: center; color: var(--text-light); font-size: 0.85rem;">
+            Showing first ${Math.min(
+              lines.length - 1,
+              10
+            )} rows of ${csvRowCount} total
+          </div>`;
+
+          previewContent.innerHTML = tableHTML;
+        } catch (error) {
+          console.error("Preview error:", error);
+          previewContent.innerHTML = `<div style="color: var(--error);">Failed to load preview: ${error}</div>`;
+        }
+      }
+
+      function toggleDataPreview() {
+        const content = document.getElementById("dataPreviewContent");
+        content.style.display =
+          content.style.display === "none" ? "block" : "none";
+      }
+
+      // HTML REPORT VIEWER FUNCTIONS
+      async function showReportViewer() {
+        if (!outputPath) return;
+
+        const reportSection = document.getElementById("reportViewerSection");
+        const reportIframe = document.getElementById("reportIframe");
+        const reportPlaceholder = document.getElementById("reportPlaceholder");
+
+        // Check if HTML report exists
+        const htmlPath = outputPath + "report.html";
+
+        try {
+          const exists = await window.__TAURI__.core.invoke("file_exists", {
+            path: htmlPath,
+          });
+
+          if (exists) {
+            reportSection.style.display = "block";
+            reportPlaceholder.style.display = "none";
+            reportIframe.style.display = "block";
+            reportIframe.src = htmlPath;
+          } else {
+            // Show section with placeholder message
+            reportSection.style.display = "block";
+            reportPlaceholder.style.display = "block";
+            reportIframe.style.display = "none";
+            showStatus(
+              "No HTML report found. Make sure to select '📈 HTML Report' in output formats.",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Report viewer error:", error);
+          reportSection.style.display = "block";
+          reportPlaceholder.style.display = "block";
+          reportIframe.style.display = "none";
+          showStatus("Failed to load report: " + error, "error");
+        }
+      }
+
+      async function openReportExternal() {
+        if (!outputPath) return;
+
+        const htmlPath = outputPath + "report.html";
+
+        try {
+          await window.__TAURI__.core.invoke("open_html_report", {
+            htmlPath: htmlPath,
+            appHandle: null,
+          });
+        } catch (error) {
+          console.error("Failed to open report:", error);
+          showStatus("Failed to open report in browser: " + error, "error");
+        }
+      }
+
+      function toggleReportViewer() {
+        const content = document.getElementById("reportViewerContent");
+        content.style.display =
+          content.style.display === "none" ? "block" : "none";
+      }
+
+      // Enhanced file selection with auto-preview
+      async function handleFileSelection(filePath) {
+        const fileName = filePath.split(/[\\/]/).pop();
+
+        try {
+          const info = await window.__TAURI__.core.invoke("get_csv_info", {
+            path: filePath,
+          });
+
+          csvRowCount = info.rows;
+          csvColCount = info.columns;
+        } catch (error) {
+          console.warn("Could not get CSV info:", error);
+        }
+
+        csvFilePath = filePath;
+        fileSelected = true;
+        csvDropZone.classList.add("file-selected");
+        csvDropZone.style.cursor = "default";
+
+        const stats =
+          csvRowCount > 0
+            ? `<div class="file-stats">
+               <div class="file-stat">📊 ${csvRowCount} rows</div>
+               <div class="file-stat">📋 ${csvColCount} columns</div>
+             </div>`
+            : "";
+
+        csvDropZone.innerHTML = `
+          <div class="drop-zone-icon">✅</div>
+          <div class="drop-zone-text">CSV file selected</div>
+          <div class="file-info">
+            <div class="file-name">${fileName}</div>
+            ${stats}
+          </div>
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+            <button onclick="event.stopPropagation(); showDataPreview()" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;">
+              👀 Preview Data
+            </button>
+            <button onclick="event.stopPropagation(); resetCSVSelection()" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;">
+              🔄 Change File
+            </button>
+          </div>
+        `;
+
+        updateOutputLocation(filePath);
+        updateProcessButton();
+
+        // Auto-show preview
+        setTimeout(() => showDataPreview(), 300);
+      }
+
+      // Enhanced process completion with report viewer
+      async function handleProcessComplete(result) {
+        if (result.includes("Success") || result.includes("✅")) {
+          const enhancedResult =
+            result +
+            `\n\n🎉 Processing complete! View your results below.\n\n` +
+            `<div class="status-actions">` +
+            `<button class="btn-status" onclick="openOutputFolder()">📁 Open Folder</button>` +
+            `<button class="btn-status" onclick="showReportViewer()">📊 View Report</button>` +
+            `<button class="btn-status" onclick="generateDictionary()">📖 Dictionary</button>` +
+            `</div>`;
+          showStatus(enhancedResult, "success");
+
+          // Enable open folder button
+          const openBtn = document.getElementById("openFolderBtn");
+          if (openBtn) {
+            openBtn.disabled = false;
+          }
+
+          // Auto-show report viewer if HTML was generated
+          if (document.getElementById("outputHTML").checked) {
+            setTimeout(() => showReportViewer(), 500);
+          }
+        } else {
+          showStatus(result, "error");
+        }
+      }
+
+      // Status display
 
       // Examples
       function showExamples() {

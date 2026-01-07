@@ -874,6 +874,72 @@ fn parse_quality_issues(quality_report: &str) -> (usize, Vec<(String, usize)>) {
     (excluded, issues_vec)
 }
 
+// COMMAND: Preview CSV data (first 10 rows)
+#[command]
+fn preview_csv_data(csv_path: String) -> Result<String, String> {
+    let path = Path::new(&csv_path);
+    let file = fs::File::open(path).map_err(|e| format!("Failed to open CSV: {}", e))?;
+    let reader = std::io::BufReader::new(file);
+
+    let mut lines: Vec<String> = Vec::new();
+    let mut count = 0;
+
+    for line in reader.lines() {
+        if count >= 11 {
+            break; // Get header + 10 rows
+        }
+        if let Ok(line_content) = line {
+            lines.push(line_content);
+            count += 1;
+        }
+    }
+
+    Ok(lines.join("\n"))
+}
+
+// COMMAND: Check if file exists
+#[command]
+fn file_exists(path: String) -> bool {
+    Path::new(&path).exists()
+}
+
+// COMMAND: Open HTML report in new window
+#[command]
+async fn open_html_report(html_path: String, _app_handle: tauri::AppHandle) -> Result<(), String> {
+    // Use shell to open in default browser
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("cmd")
+            .args(["/C", "start", "", &html_path])
+            .spawn()
+            .map_err(|e| format!("Failed to open HTML: {}", e))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&html_path)
+            .spawn()
+            .map_err(|e| format!("Failed to open HTML: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(&html_path)
+            .spawn()
+            .map_err(|e| format!("Failed to open HTML: {}", e))?;
+    }
+
+    Ok(())
+}
+
+// COMMAND: Read HTML content for inline display
+#[command]
+fn read_html_content(html_path: String) -> Result<String, String> {
+    fs::read_to_string(&html_path).map_err(|e| format!("Failed to read HTML: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -891,7 +957,11 @@ pub fn run() {
             get_scale_info,
             generate_scale_config,
             run_dictionary,
-            run_consort
+            run_consort,
+            preview_csv_data,
+            file_exists,
+            open_html_report,
+            read_html_content
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
