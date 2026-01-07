@@ -628,6 +628,12 @@ fn run_dictionary(
         }
     };
 
+    // Create output directory if it doesn't exist
+    if let Some(parent) = Path::new(&output_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create output directory: {}", e))?;
+    }
+
     let mut cmd = Command::new(&cli_path);
     cmd.arg("dictionary")
         .arg("--config")
@@ -715,6 +721,13 @@ fn run_consort(
     let output_folder = Path::new(&output_path)
         .parent()
         .unwrap_or(Path::new(&output_path));
+
+    // Create output directory if it doesn't exist
+    if let Some(parent) = Path::new(&output_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create output directory: {}", e))?;
+    }
+
     let processed_csv = output_folder.join("consort_processed.csv");
     let quality_report = output_folder.join("consort_quality.txt");
 
@@ -940,6 +953,393 @@ fn read_html_content(html_path: String) -> Result<String, String> {
     fs::read_to_string(&html_path).map_err(|e| format!("Failed to read HTML: {}", e))
 }
 
+// COMMAND: Power Analysis - A priori (calculate required sample size)
+#[command]
+fn run_power_analysis(
+    analysis_type: String,
+    test_type: String,
+    effect_size: f64,
+    alpha: f64,
+    power: Option<f64>,
+    n: Option<i32>,
+) -> Result<String, String> {
+    // Validate inputs
+    if effect_size <= 0.0 {
+        return Err("Effect size must be positive".to_string());
+    }
+    if alpha <= 0.0 || alpha >= 1.0 {
+        return Err("Alpha must be between 0 and 1".to_string());
+    }
+
+    let result = match analysis_type.as_str() {
+        "a-priori" => {
+            let power = power.ok_or("Power is required for a-priori analysis")?;
+            if power <= 0.0 || power >= 1.0 {
+                return Err("Power must be between 0 and 1".to_string());
+            }
+
+            // Calculate required sample size based on test type
+            match test_type.as_str() {
+                "independent-t" => {
+                    // Cohen's d for independent t-test
+                    // n per group = 2 * (Z_alpha + Z_beta)^2 / d^2
+                    let z_alpha = norm_inv(1.0 - alpha / 2.0);
+                    let z_beta = norm_inv(power);
+                    let n_per_group =
+                        (2.0 * (z_alpha + z_beta).powi(2) / effect_size.powi(2)).ceil() as i32;
+                    format!(
+                        "📊 A Priori Power Analysis Results\n\n\
+                        Test: Independent t-test\n\
+                        Effect size (Cohen's d): {:.3}\n\
+                        Alpha level: {:.3}\n\
+                        Target power: {:.3}\n\n\
+                        ✅ Required sample size:\n\
+                        • {} per group\n\
+                        • {} total participants\n\n\
+                        💡 Interpretation:\n\
+                        You need {} participants in each group (total N={}) to detect \
+                        a {} effect size with {}% power at α={:.2}.",
+                        effect_size,
+                        alpha,
+                        power,
+                        n_per_group,
+                        n_per_group * 2,
+                        n_per_group,
+                        n_per_group * 2,
+                        interpret_effect_size(effect_size),
+                        (power * 100.0) as i32,
+                        alpha
+                    )
+                }
+                "paired-t" => {
+                    // Cohen's d for paired t-test
+                    // n = (Z_alpha + Z_beta)^2 / d^2
+                    let z_alpha = norm_inv(1.0 - alpha / 2.0);
+                    let z_beta = norm_inv(power);
+                    let n_total = ((z_alpha + z_beta).powi(2) / effect_size.powi(2)).ceil() as i32;
+                    format!(
+                        "📊 A Priori Power Analysis Results\n\n\
+                        Test: Paired t-test\n\
+                        Effect size (Cohen's d): {:.3}\n\
+                        Alpha level: {:.3}\n\
+                        Target power: {:.3}\n\n\
+                        ✅ Required sample size: {} participants\n\n\
+                        💡 Interpretation:\n\
+                        You need {} participants (measured at two time points) to detect \
+                        a {} effect size with {}% power at α={:.2}.",
+                        effect_size,
+                        alpha,
+                        power,
+                        n_total,
+                        n_total,
+                        interpret_effect_size(effect_size),
+                        (power * 100.0) as i32,
+                        alpha
+                    )
+                }
+                "correlation" => {
+                    // r for correlation
+                    // n = [(Z_alpha + Z_beta) / 0.5 * ln((1+r)/(1-r))]^2 + 3
+                    let z_alpha = norm_inv(1.0 - alpha / 2.0);
+                    let z_beta = norm_inv(power);
+                    let fisher_z = 0.5 * ((1.0 + effect_size) / (1.0 - effect_size)).ln();
+                    let n_total = ((z_alpha + z_beta) / fisher_z).powi(2).ceil() as i32 + 3;
+                    format!(
+                        "📊 A Priori Power Analysis Results\n\n\
+                        Test: Correlation (Pearson r)\n\
+                        Expected correlation: {:.3}\n\
+                        Alpha level: {:.3}\n\
+                        Target power: {:.3}\n\n\
+                        ✅ Required sample size: {} participants\n\n\
+                        💡 Interpretation:\n\
+                        You need {} participants to detect a correlation of r={:.2} \
+                        with {}% power at α={:.2}.",
+                        effect_size,
+                        alpha,
+                        power,
+                        n_total,
+                        n_total,
+                        effect_size,
+                        (power * 100.0) as i32,
+                        alpha
+                    )
+                }
+                _ => return Err(format!("Unknown test type: {}", test_type)),
+            }
+        }
+        "post-hoc" => {
+            let n = n.ok_or("Sample size (n) is required for post-hoc analysis")?;
+            if n <= 0 {
+                return Err("Sample size must be positive".to_string());
+            }
+
+            // Calculate achieved power based on test type
+            match test_type.as_str() {
+                "independent-t" => {
+                    let z_alpha = norm_inv(1.0 - alpha / 2.0);
+                    let n_per_group = n / 2;
+                    let ncp = effect_size * (n_per_group as f64 / 2.0).sqrt();
+                    let z_beta = ncp - z_alpha;
+                    let power = norm_cdf(z_beta);
+                    format!(
+                        "📊 Post-Hoc Power Analysis Results\n\n\
+                        Test: Independent t-test\n\
+                        Effect size (Cohen's d): {:.3}\n\
+                        Alpha level: {:.3}\n\
+                        Sample size: {} per group ({} total)\n\n\
+                        ✅ Achieved power: {:.3} ({}%)\n\n\
+                        💡 Interpretation:\n\
+                        With {} participants per group, your study has {}% power to detect \
+                        a {} effect size at α={:.2}. {}",
+                        effect_size,
+                        alpha,
+                        n_per_group,
+                        n,
+                        power,
+                        (power * 100.0) as i32,
+                        n_per_group,
+                        (power * 100.0) as i32,
+                        interpret_effect_size(effect_size),
+                        alpha,
+                        interpret_power(power)
+                    )
+                }
+                "paired-t" => {
+                    let z_alpha = norm_inv(1.0 - alpha / 2.0);
+                    let ncp = effect_size * (n as f64).sqrt();
+                    let z_beta = ncp - z_alpha;
+                    let power = norm_cdf(z_beta);
+                    format!(
+                        "📊 Post-Hoc Power Analysis Results\n\n\
+                        Test: Paired t-test\n\
+                        Effect size (Cohen's d): {:.3}\n\
+                        Alpha level: {:.3}\n\
+                        Sample size: {} participants\n\n\
+                        ✅ Achieved power: {:.3} ({}%)\n\n\
+                        💡 Interpretation:\n\
+                        With {} participants, your study has {}% power to detect \
+                        a {} effect size at α={:.2}. {}",
+                        effect_size,
+                        alpha,
+                        n,
+                        power,
+                        (power * 100.0) as i32,
+                        n,
+                        (power * 100.0) as i32,
+                        interpret_effect_size(effect_size),
+                        alpha,
+                        interpret_power(power)
+                    )
+                }
+                "correlation" => {
+                    let z_alpha = norm_inv(1.0 - alpha / 2.0);
+                    let fisher_z = 0.5 * ((1.0 + effect_size) / (1.0 - effect_size)).ln();
+                    let se = 1.0 / ((n - 3) as f64).sqrt();
+                    let z_beta = fisher_z / se - z_alpha;
+                    let power = norm_cdf(z_beta);
+                    format!(
+                        "📊 Post-Hoc Power Analysis Results\n\n\
+                        Test: Correlation (Pearson r)\n\
+                        Expected correlation: {:.3}\n\
+                        Alpha level: {:.3}\n\
+                        Sample size: {} participants\n\n\
+                        ✅ Achieved power: {:.3} ({}%)\n\n\
+                        💡 Interpretation:\n\
+                        With {} participants, your study has {}% power to detect \
+                        a correlation of r={:.2} at α={:.2}. {}",
+                        effect_size,
+                        alpha,
+                        n,
+                        power,
+                        (power * 100.0) as i32,
+                        n,
+                        (power * 100.0) as i32,
+                        effect_size,
+                        alpha,
+                        interpret_power(power)
+                    )
+                }
+                _ => return Err(format!("Unknown test type: {}", test_type)),
+            }
+        }
+        _ => return Err(format!("Unknown analysis type: {}", analysis_type)),
+    };
+
+    Ok(result)
+}
+
+// Helper: Normal distribution inverse (approximate)
+fn norm_inv(p: f64) -> f64 {
+    // Beasley-Springer-Moro algorithm (approximate)
+    let a = [
+        2.50662823884,
+        -18.61500062529,
+        41.39119773534,
+        -25.44106049637,
+    ];
+    let b = [
+        -8.47351093090,
+        23.08336743743,
+        -21.06224101826,
+        3.13082909833,
+    ];
+    let c = [
+        0.3374754822726147,
+        0.9761690190917186,
+        0.1607979714918209,
+        0.0276438810333863,
+        0.0038405729373609,
+        0.0003951896511919,
+        0.0000321767881768,
+        0.0000002888167364,
+        0.0000003960315187,
+    ];
+
+    let y = p - 0.5;
+    if y.abs() < 0.42 {
+        let r = y * y;
+        let x = y * (((a[3] * r + a[2]) * r + a[1]) * r + a[0])
+            / ((((b[3] * r + b[2]) * r + b[1]) * r + b[0]) * r + 1.0);
+        x
+    } else {
+        let r = if y > 0.0 { 1.0 - p } else { p };
+        let s = r.ln().abs().sqrt();
+        let t = s
+            - ((c[8] * s + c[7]) * s + c[6])
+                / ((((((c[5] * s + c[4]) * s + c[3]) * s + c[2]) * s + c[1]) * s + c[0]) * s + 1.0);
+        if y < 0.0 {
+            -t
+        } else {
+            t
+        }
+    }
+}
+
+// Helper: Normal distribution CDF (approximate)
+fn norm_cdf(x: f64) -> f64 {
+    0.5 * (1.0 + erf(x / 2.0_f64.sqrt()))
+}
+
+// Helper: Error function (approximate)
+fn erf(x: f64) -> f64 {
+    let a1 = 0.254829592;
+    let a2 = -0.284496736;
+    let a3 = 1.421413741;
+    let a4 = -1.453152027;
+    let a5 = 1.061405429;
+    let p = 0.3275911;
+
+    let sign = if x < 0.0 { -1.0 } else { 1.0 };
+    let x = x.abs();
+
+    let t = 1.0 / (1.0 + p * x);
+    let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-x * x).exp();
+
+    sign * y
+}
+
+// Helper: Interpret effect size
+fn interpret_effect_size(d: f64) -> &'static str {
+    if d.abs() < 0.2 {
+        "very small"
+    } else if d.abs() < 0.5 {
+        "small"
+    } else if d.abs() < 0.8 {
+        "medium"
+    } else {
+        "large"
+    }
+}
+
+// Helper: Interpret power
+fn interpret_power(power: f64) -> &'static str {
+    if power < 0.5 {
+        "⚠️ Power is very low - high risk of Type II error (missing a real effect)."
+    } else if power < 0.7 {
+        "⚠️ Power is below conventional standards (0.80). Consider increasing sample size."
+    } else if power < 0.8 {
+        "✓ Power is approaching conventional standards."
+    } else if power < 0.9 {
+        "✅ Power meets conventional standards (≥0.80)."
+    } else {
+        "✅ Power is excellent (≥0.90)."
+    }
+}
+
+// COMMAND: Longitudinal merge - Combine two time points
+#[command]
+fn run_longitudinal_merge(
+    t1_path: String,
+    t2_path: String,
+    id_column: String,
+    output_path: String,
+) -> Result<String, String> {
+    let app = tauri::Builder::default()
+        .build(tauri::generate_context!())
+        .unwrap();
+    let cli_name = if cfg!(windows) { "prism.exe" } else { "prism" };
+
+    let cli_path = app
+        .path()
+        .resource_dir()
+        .ok()
+        .and_then(|resource_dir| {
+            let bundled = resource_dir.join(cli_name);
+            if bundled.exists() {
+                Some(bundled)
+            } else {
+                None
+            }
+        })
+        .or_else(|| {
+            let release_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("target")
+                .join("release")
+                .join(cli_name);
+            if release_path.exists() {
+                Some(release_path)
+            } else {
+                let debug_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("..")
+                    .join("target")
+                    .join("debug")
+                    .join(cli_name);
+                if debug_path.exists() {
+                    Some(debug_path)
+                } else {
+                    None
+                }
+            }
+        })
+        .ok_or("CLI binary not found")?;
+
+    let output = Command::new(&cli_path)
+        .arg("longitudinal")
+        .arg("merge")
+        .arg("--t1")
+        .arg(&t1_path)
+        .arg("--t2")
+        .arg(&t2_path)
+        .arg("--id-column")
+        .arg(&id_column)
+        .arg("--output")
+        .arg(&output_path)
+        .output()
+        .map_err(|e| format!("Failed to execute: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Merge failed:\n\n{}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(format!(
+        "✅ Successfully merged longitudinal data!\n\n{}\n\nOutput saved to:\n{}",
+        stdout, output_path
+    ))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -961,7 +1361,9 @@ pub fn run() {
             preview_csv_data,
             file_exists,
             open_html_report,
-            read_html_content
+            read_html_content,
+            run_power_analysis,
+            run_longitudinal_merge
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

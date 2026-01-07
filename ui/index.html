@@ -54,16 +54,20 @@
         margin: 0;
         padding: 20px;
         transition: background 0.3s ease, color 0.3s ease;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        letter-spacing: -0.01em;
       }
 
       .container {
         background: var(--bg-card);
         padding: 2.5rem;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px var(--shadow);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px var(--shadow), 0 0 0 1px rgba(0, 0, 0, 0.05);
         width: 100%;
-        max-width: 800px;
+        max-width: 900px;
         animation: slideIn 0.3s ease-out;
+        backdrop-filter: blur(10px);
       }
 
       @keyframes slideIn {
@@ -87,11 +91,13 @@
       h1 {
         color: var(--text);
         margin: 0;
-        font-size: 2rem;
+        font-size: 2.25rem;
         font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
       }
 
       .subtitle {
@@ -100,8 +106,564 @@
         font-size: 0.9rem;
       }
 
-      .help-btn {
+      /* Quick Actions Bar */
+      .quick-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        border-radius: 16px;
+        flex-wrap: wrap;
+        border: 1px solid var(--border);
+      }
+
+      .quick-action-btn {
+        flex: 1;
+        min-width: 160px;
+        background: white;
+        border: 2px solid var(--border);
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.625rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .quick-action-btn:hover:not(:disabled) {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+      }
+
+      .quick-action-btn:active:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(102, 126, 234, 0.2);
+      }
+
+      .quick-action-btn.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .quick-action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Progress Step Indicator */
+      .progress-step-indicator {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .progress-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--border);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .progress-dot.active {
+        background: var(--primary);
+        box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.2);
+        transform: scale(1.2);
+      }
+
+      .progress-dot.completed {
+        background: var(--success);
+        box-shadow: 0 0 0 4px rgba(72, 187, 120, 0.2);
+      }
+
+      /* Section Enhancement */
+      .section-enhanced {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 2px solid var(--border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .section-enhanced:hover {
+        border-color: var(--primary);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .section-enhanced.completed {
+        border-color: var(--success);
+        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+        box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
+      }
+
+      .section-badge {
+        display: inline-block;
+        background: var(--primary);
+        color: white;
+        padding: 0.35rem 0.875rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-left: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+      }
+
+      .section-badge.completed {
+        background: var(--success);
+        box-shadow: 0 2px 6px rgba(72, 187, 120, 0.3);
+      }
+
+      .section-badge.optional {
+        background: var(--text-light);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+
+
+      /* Toast Notification */
+      .toast-notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem 1.75rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        display: none;
+        align-items: center;
+        gap: 1rem;
+        min-width: 320px;
+        z-index: 9999;
+        animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 4px solid var(--info);
+      }
+
+      @keyframes slideInRight {
+        from {
+          transform: translateX(500px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .toast-notification.show {
+        display: flex;
+      }
+
+      .toast-notification.success {
+        border-left-color: var(--success);
+      }
+
+      .toast-notification.error {
+        border-left-color: var(--error);
+      }
+
+      .toast-notification.info {
+        border-left-color: var(--info);
+      }
+
+      /* Loading Overlay */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(8px);
+      }
+
+      .loading-overlay.show {
+        display: flex;
+      }
+
+      .loading-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 20px;
+        text-align: center;
+        max-width: 350px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 1.5rem;
+      }
+
+      /* Tab Navigation */
+      .tabs {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid var(--border);
+        overflow-x: auto;
+      }
+
+      .tab {
+        background: transparent;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-light);
+        position: relative;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+
+      .tab:hover {
+        color: var(--text);
         background: var(--bg-light);
+      }
+
+      .tab.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        font-weight: 600;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+
+      .tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary);
+        animation: slideInTab 0.2s ease-out;
+      }
+
+      @keyframes slideInTab {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease-out;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        min-height: 400px;
+        padding: 1rem 0;
+      }
+
+      .tab-content.active {
+        display: block !important;
+      }
+
+      /* Progress Steps */
+      .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+      }
+
+      .progress-steps::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border);
+        z-index: 0;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        position: relative;
+        z-index: 1;
+      }
+
+      .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg-light);
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+
+      .step.active .step-circle {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        transform: scale(1.1);
+      }
+
+      .step.completed .step-circle {
+        background: var(--success);
+        color: white;
+        border-color: var(--success);
+      }
+
+      .step-label {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        text-align: center;
+      }
+
+      .step.active .step-label {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      /* Card Layout */
+      .card {
+        background: var(--bg-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+      }
+
+      .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      /* Input Validation */
+      .input-group {
+        margin-bottom: 1rem;
+      }
+
+      .input-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+      }
+
+      .input-wrapper {
+        position: relative;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      input.error,
+      select.error {
+        border-color: var(--error);
+      }
+
+      .input-feedback {
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        display: none;
+      }
+
+      .input-feedback.error {
+        color: var(--error);
+        display: block;
+      }
+
+      .input-feedback.success {
+        color: var(--success);
+        display: block;
+      }
+
+      /* Loading Spinner */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+
+      .loading-overlay.show {
+        display: flex;
+      }
+
+      .loading-content {
+        background: var(--bg-card);
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        max-width: 300px;
+      }
+
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 1rem;
+      }
+
+      /* Floating Action Button */
+      .fab {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+        z-index: 1000;
+      }
+
+      .fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+      }
+
+      /* Toast Notifications */
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--bg-dark);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        opacity: 0;
+        transition: all 0.3s;
+        z-index: 9999;
+      }
+
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      .toast.success {
+        background: var(--success);
+      }
+
+      .toast.error {
+        background: var(--error);
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .container {
+          padding: 1.5rem;
+          max-width: 100%;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        .tabs {
+          gap: 0;
+        }
+
+        .tab {
+          padding: 0.5rem 1rem;
+          font-size: 0.85rem;
+        }
+
+        .progress-steps {
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .step-circle {
+          width: 32px;
+          height: 32px;
+          font-size: 0.9rem;
+        }
+
+        .config-options {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .help-btn {
         border: none;
         border-radius: 50%;
         width: 36px;
@@ -170,8 +732,9 @@
 
       /* Sections */
       .section {
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
         animation: fadeIn 0.4s ease-out;
+        position: relative;
       }
 
       @keyframes fadeIn {
@@ -258,8 +821,9 @@
 
       .drop-zone:hover:not(.file-selected) {
         border-color: var(--primary);
-        background: #edf2f7;
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, #edf2f7 0%, #f7fafc 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
       }
 
       .drop-zone.drag-over {
@@ -330,16 +894,17 @@
         background: var(--bg-light);
         color: var(--text);
         border: 2px solid var(--border);
-        padding: 0.75rem;
-        border-radius: 6px;
+        padding: 0.875rem 1.25rem;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: all 0.2s;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
+        letter-spacing: -0.01em;
       }
 
       .btn-secondary:hover {
@@ -347,6 +912,7 @@
         border-color: var(--primary);
         color: var(--primary);
         transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
       }
 
       .btn-secondary.active {
@@ -395,21 +961,22 @@
       textarea {
         width: 100%;
         min-height: 320px;
-        padding: 1rem;
+        padding: 1.25rem;
         border: 2px solid var(--border);
-        border-radius: 8px;
+        border-radius: 12px;
         font-family: "Consolas", "Monaco", "Courier New", monospace;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         resize: vertical;
-        line-height: 1.6;
+        line-height: 1.8;
         background: #fafafa;
-        transition: border-color 0.2s;
+        transition: all 0.3s;
       }
 
       textarea:focus {
         outline: none;
         border-color: var(--primary);
         background: white;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
       }
 
       .config-validation {
@@ -489,23 +1056,25 @@
         );
         color: white;
         border: none;
-        padding: 1.1rem 2rem;
-        border-radius: 8px;
+        padding: 1.25rem 2rem;
+        border-radius: 12px;
         cursor: pointer;
-        font-size: 1.05rem;
-        font-weight: 600;
+        font-size: 1.1rem;
+        font-weight: 700;
         width: 100%;
         margin-top: 1.5rem;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        letter-spacing: 0.01em;
+        box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
       }
 
       .btn-primary:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
       }
 
       .btn-primary:active:not(:disabled) {
@@ -544,10 +1113,12 @@
 
       .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+        background-size: 200% 100%;
         border-radius: 3px;
-        transition: width 0.3s ease;
-        animation: shimmer 1.5s infinite;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: shimmer 2s infinite;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
       }
 
       @keyframes shimmer {
@@ -570,15 +1141,16 @@
 
       /* Status display */
       #status {
-        margin-top: 1.5rem;
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        line-height: 1.6;
+        margin-top: 2rem;
+        padding: 1.5rem 1.75rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        line-height: 1.7;
         display: none;
         white-space: pre-line;
         word-break: break-word;
         border: 2px solid transparent;
+        backdrop-filter: blur(10px);
       }
 
       #status.show {
@@ -643,6 +1215,15 @@
         }
       }
 
+      @keyframes pulse {
+        0%, 100% {
+          box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+        }
+        50% {
+          box-shadow: 0 0 0 20px rgba(102, 126, 234, 0);
+        }
+      }
+
       /* Keyboard shortcuts hint */
       .shortcuts {
         margin-top: 1.5rem;
@@ -672,12 +1253,14 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        animation: fadeIn 0.2s ease-out;
+        background: rgba(0, 0, 0, 0.7);
+        animation: fadeIn 0.3s ease-out;
+        backdrop-filter: blur(8px);
       }
 
       .modal.show {
-        display: flex;
+        display: flex !important;
+        opacity: 1 !important;
         align-items: center;
         justify-content: center;
         padding: 20px;
@@ -685,13 +1268,14 @@
 
       .modal-content {
         background: white;
-        padding: 2rem;
-        border-radius: 12px;
+        padding: 2.5rem;
+        border-radius: 20px;
         max-width: 600px;
         width: 100%;
         max-height: 80vh;
         overflow-y: auto;
         animation: slideIn 0.3s ease-out;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       }
 
       .modal-header {
@@ -746,7 +1330,7 @@
       <!-- Header -->
       <div class="header">
         <div>
-          <h1>🔬 Prism v0.8.0</h1>
+          <h1>🔬 Prism v0.8.7</h1>
           <p class="subtitle">
             Psychology Survey Data Processor with Advanced Quality Checks
           </p>
@@ -765,11 +1349,50 @@
         </div>
       </div>
 
+      <!-- Progress Indicator -->
+      <div class="progress-step-indicator" id="progressIndicator">
+        <div class="progress-dot active" title="Step 1: Select Data"></div>
+        <div style="flex: 1; height: 2px; background: var(--border);"></div>
+        <div class="progress-dot" title="Step 2: Configure"></div>
+        <div style="flex: 1; height: 2px; background: var(--border);"></div>
+        <div class="progress-dot" title="Step 3: Process"></div>
+        <div style="flex: 1; height: 2px; background: var(--border);"></div>
+        <div class="progress-dot" title="Step 4: Results"></div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('basic')">📊 Basic Analysis</button>
+        <button class="tab" onclick="switchTab('advanced')">⚙️ Advanced Options</button>
+        <button class="tab" onclick="switchTab('tools')">🔧 Analysis Tools</button>
+        <button class="tab" onclick="switchTab('results')">📈 Results</button>
+      </div>
+
+      <!-- Tab Content: Basic Analysis -->
+      <div class="tab-content active" id="contentBasic">
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="quick-action-btn" onclick="document.getElementById('csvDropZone').click()">
+          📂 <span>Select Data</span>
+        </button>
+        <button class="quick-action-btn" onclick="useExistingConfig()">
+          ⚙️ <span>Load Config</span>
+        </button>
+        <button class="quick-action-btn" onclick="showScaleBrowser()">
+          📚 <span>Scale Library</span>
+        </button>
+        <button class="quick-action-btn" onclick="processData()" id="quickProcessBtn" disabled>
+          ▶️ <span>Process</span>
+        </button>
+      </div>
+
       <!-- CSV File Section -->
-      <div class="section">
+      <div class="section section-enhanced" id="csvSection">
         <div class="section-header">
           <label class="section-label">
             <span>1️⃣ CSV Data File</span>
+            <span class="section-badge">Required</span>
             <span class="tooltip">
               ⓘ
               <span class="tooltip-text">
@@ -788,10 +1411,11 @@
       </div>
 
       <!-- Config Section -->
-      <div class="section">
+      <div class="section section-enhanced" id="configSection">
         <div class="section-header">
           <label class="section-label">
             <span>2️⃣ Configuration</span>
+            <span class="section-badge">Required</span>
             <span class="tooltip">
               ⓘ
               <span class="tooltip-text">
@@ -1026,6 +1650,128 @@
         <span>▶</span> Process Data
       </button>
 
+      <!-- Progress Bar -->
+      <div id="progressContainer" class="progress-container">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <div id="progressText" class="progress-text"></div>
+      </div>
+
+      <!-- Status Display -->
+      <div id="status"></div>
+
+      <!-- Data Preview Section -->
+      <div id="dataPreviewSection" style="display: none; margin-top: 1.5rem">
+        <div class="section-header">
+          <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary)">
+            📊 Data Preview
+          </h3>
+          <button
+            onclick="toggleDataPreview()"
+            style="
+              background: none;
+              border: none;
+              font-size: 1.2rem;
+              cursor: pointer;
+            "
+          >
+            ▼
+          </button>
+        </div>
+        <div
+          id="dataPreviewContent"
+          style="
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow: auto;
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+          "
+        >
+          <div style="text-align: center; color: var(--text-light)">
+            Loading preview...
+          </div>
+        </div>
+      </div>
+
+      <!-- HTML Report Viewer Section -->
+      <div id="reportViewerSection" style="display: none; margin-top: 1.5rem">
+        <div class="section-header" style="margin-bottom: 0.5rem">
+          <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary)">
+            📈 Analysis Report
+          </h3>
+          <div style="display: flex; gap: 0.5rem">
+            <button
+              onclick="openReportExternal()"
+              class="btn-secondary"
+              style="padding: 0.5rem 1rem; font-size: 0.85rem"
+            >
+              🌐 Open in Browser
+            </button>
+            <button
+              onclick="toggleReportViewer()"
+              style="
+                background: none;
+                border: none;
+                font-size: 1.2rem;
+                cursor: pointer;
+              "
+            >
+              ▼
+            </button>
+          </div>
+        </div>
+        <div id="reportViewerContent" style="margin-top: 1rem">
+          <iframe
+            id="reportIframe"
+            src="about:blank"
+            style="
+              width: 100%;
+              height: 600px;
+              border: 2px solid var(--border);
+              border-radius: 8px;
+              background: white;
+              display: none;
+            "
+          ></iframe>
+          <div
+            id="reportPlaceholder"
+            style="
+              padding: 3rem;
+              text-align: center;
+              color: var(--text-light);
+              background: var(--bg-light);
+              border: 2px dashed var(--border);
+              border-radius: 8px;
+            "
+          >
+            <div style="font-size: 3rem; margin-bottom: 1rem">📊</div>
+            <div style="font-size: 1.1rem; margin-bottom: 0.5rem">
+              No report generated yet
+            </div>
+            <div style="font-size: 0.9rem">
+              Make sure to select "📈 HTML Report" in output formats and process
+              your data
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Tab Content: Advanced Options -->
+      <div class="tab-content" id="contentAdvanced">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎯 Advanced Processing Options</div>
+          </div>
+          <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem">
+            Configure advanced settings for your analysis workflow.
+          </p>
+
       <!-- v0.8.0 New Features Section -->
       <div
         class="section"
@@ -1116,10 +1862,329 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Tab Content: Analysis Tools -->
+      <div class="tab-content" id="contentTools">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔧 Analysis Tools</div>
+          </div>
+          <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem">
+            Additional statistical tools for power analysis and longitudinal data.
+          </p>
+
+        <!-- Power Analysis -->
+        <div style="margin-top: 1.5rem">
+          <div class="section-header">
+            <label class="section-label">
+              <span>📊 Power Analysis</span>
+              <span class="tooltip">
+                ⓘ
+                <span class="tooltip-text">
+                  Calculate required sample size (a priori) or achieved power
+                  (post-hoc) for your study. Based on Cohen (1988) statistical
+                  power analysis.
+                </span>
+              </span>
+            </label>
+          </div>
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem"
+          >
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Analysis Type
+              </label>
+              <select
+                id="powerAnalysisType"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+                onchange="togglePowerFields()"
+              >
+                <option value="a-priori">A Priori (Sample Size)</option>
+                <option value="post-hoc">Post-Hoc (Achieved Power)</option>
+              </select>
+            </div>
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Test Type
+              </label>
+              <select
+                id="powerTestType"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+              >
+                <option value="independent-t">Independent t-test</option>
+                <option value="paired-t">Paired t-test</option>
+                <option value="correlation">Correlation (Pearson r)</option>
+              </select>
+            </div>
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Effect Size (Cohen's d or r)
+              </label>
+              <input
+                type="number"
+                id="powerEffectSize"
+                step="0.01"
+                value="0.5"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+              />
+              <small style="color: var(--text-light); font-size: 0.75rem">
+                Small=0.2, Medium=0.5, Large=0.8
+              </small>
+            </div>
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Alpha Level
+              </label>
+              <input
+                type="number"
+                id="powerAlpha"
+                step="0.01"
+                value="0.05"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+              />
+            </div>
+            <div id="powerTargetField">
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Target Power
+              </label>
+              <input
+                type="number"
+                id="powerTarget"
+                step="0.01"
+                value="0.80"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+              />
+            </div>
+            <div id="powerNField" style="display: none">
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Sample Size (n)
+              </label>
+              <input
+                type="number"
+                id="powerN"
+                step="1"
+                value="100"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+              />
+            </div>
+          </div>
+          <button
+            class="btn-secondary"
+            onclick="calculatePower()"
+            style="width: 100%; margin-top: 0.75rem; padding: 0.75rem"
+          >
+            🧮 Calculate
+          </button>
+        </div>
+
+        <!-- Longitudinal Analysis -->
+        <div style="margin-top: 1.5rem">
+          <div class="section-header">
+            <label class="section-label">
+              <span>📈 Longitudinal Analysis</span>
+              <span class="tooltip">
+                ⓘ
+                <span class="tooltip-text">
+                  Merge data from multiple time points (T1, T2, etc.) and
+                  calculate change scores. Requires matching participant IDs
+                  across files.
+                </span>
+              </span>
+            </label>
+          </div>
+          <div style="display: grid; gap: 0.75rem">
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Time 1 (Baseline) CSV
+              </label>
+              <div style="display: flex; gap: 0.5rem">
+                <input
+                  type="text"
+                  id="longT1Path"
+                  readonly
+                  placeholder="Select baseline CSV file..."
+                  style="
+                    flex: 1;
+                    padding: 0.6rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: var(--bg-light);
+                  "
+                />
+                <button
+                  class="btn-secondary"
+                  onclick="selectLongitudinalFile('t1')"
+                  style="width: auto; padding: 0.6rem 1rem"
+                >
+                  📁 Browse
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Time 2 (Follow-up) CSV
+              </label>
+              <div style="display: flex; gap: 0.5rem">
+                <input
+                  type="text"
+                  id="longT2Path"
+                  readonly
+                  placeholder="Select follow-up CSV file..."
+                  style="
+                    flex: 1;
+                    padding: 0.6rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: var(--bg-light);
+                  "
+                />
+                <button
+                  class="btn-secondary"
+                  onclick="selectLongitudinalFile('t2')"
+                  style="width: auto; padding: 0.6rem 1rem"
+                >
+                  📁 Browse
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-light);
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+              >
+                ID Column Name
+              </label>
+              <input
+                type="text"
+                id="longIdColumn"
+                placeholder="e.g., participant_id, subject_id"
+                value="participant_id"
+                style="
+                  width: 100%;
+                  padding: 0.6rem;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                "
+              />
+              <small style="color: var(--text-light); font-size: 0.75rem">
+                Must be the same in both files
+              </small>
+            </div>
+          </div>
+          <button
+            class="btn-secondary"
+            onclick="mergeLongitudinal()"
+            style="width: 100%; margin-top: 0.75rem; padding: 0.75rem"
+          >
+            🔗 Merge Time Points
+          </button>
+        </div>
+      </div>
+      </div>
+
+      <!-- Tab Content: Results -->
+      <div class="tab-content" id="contentResults">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📈 Analysis Results</div>
+          </div>
 
         <div
           style="
-            margin-top: 1rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
             padding: 0.75rem;
             background: #eff6ff;
             border-left: 3px solid var(--info);
@@ -1132,7 +2197,6 @@
           alternating, block), semantic inconsistency checks, and enhanced
           quality reporting
         </div>
-      </div>
 
       <!-- Progress Bar -->
       <div id="progressContainer" class="progress-container">
@@ -1244,13 +2308,17 @@
           </div>
         </div>
       </div>
+      </div>
+      </div>
 
       <!-- Keyboard Shortcuts -->
       <div class="shortcuts">
-        💡 <span class="kbd">Ctrl</span> + <span class="kbd">O</span> Open CSV •
+        💡 <span class="kbd">Ctrl</span> + <span class="kbd">1-4</span> Switch Tabs •
+        <span class="kbd">Ctrl</span> + <span class="kbd">O</span> Open CSV •
         <span class="kbd">Ctrl</span> + <span class="kbd">K</span> Open Config •
         <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> Process
       </div>
+    </div>
     </div>
 
     <!-- Scale Library Browser Modal -->
@@ -1443,6 +2511,7 @@
           document.getElementById("configTextarea").value = config;
           configText = config;
           closeExamples();
+          closeScaleBrowser(); // Close the modal after loading
 
           if (!isEditingConfig) {
             toggleConfigEditor();
@@ -1450,6 +2519,7 @@
 
           validateConfig();
           showStatus(`✅ Loaded ${scaleName} configuration`, "success");
+          showToast(`Loaded ${scaleName} configuration`, "success");
         } catch (error) {
           console.error(`Failed to load ${scaleName}:`, error);
           showStatus(`Failed to load ${scaleName}: ${error}`, "error");
@@ -1730,10 +2800,31 @@
 
       function updateProcessButton() {
         const btn = document.getElementById("processBtn");
+        const quickBtn = document.getElementById("quickProcessBtn");
         const hasCSV = csvFilePath !== null;
         const hasConfig = configFilePath !== null || isEditingConfig;
 
-        btn.disabled = !(hasCSV && hasConfig);
+        const enabled = hasCSV && hasConfig;
+        btn.disabled = !enabled;
+        if (quickBtn) {
+          quickBtn.disabled = !enabled;
+          if (enabled) {
+            quickBtn.classList.add('active');
+          } else {
+            quickBtn.classList.remove('active');
+          }
+        }
+
+        // Update section completion status
+        if (hasCSV) {
+          const csvSection = document.getElementById('csvSection');
+          if (csvSection) csvSection.classList.add('completed');
+          updateProgressSteps(1);
+        }
+        if (hasConfig) {
+          const configSection = document.getElementById('configSection');
+          if (configSection) configSection.classList.add('completed');
+        }
       }
 
       // Process data
@@ -2442,8 +3533,16 @@ For more info, check the documentation folder.`);
 
       // Scale Browser
       function showScaleBrowser() {
-        document.getElementById("scaleBrowserModal").classList.add("show");
-        loadAllScalesInfo();
+        console.log("showScaleBrowser called");
+        const modal = document.getElementById("scaleBrowserModal");
+        console.log("Modal element:", modal);
+        if (modal) {
+          modal.classList.add("show");
+          console.log("Added show class to modal");
+          loadAllScalesInfo();
+        } else {
+          console.error("Scale browser modal not found!");
+        }
       }
 
       function closeScaleBrowser() {
@@ -2451,21 +3550,26 @@ For more info, check the documentation folder.`);
       }
 
       async function loadAllScalesInfo() {
+        console.log("loadAllScalesInfo called");
         try {
           const scales = await window.__TAURI__.core.invoke(
             "get_available_scales"
           );
+          console.log("Available scales:", scales);
           const detailsDiv = document.getElementById("scaleDetails");
+          console.log("Details div:", detailsDiv);
 
           if (scales && scales.length > 0) {
             let html = '<div style="display: grid; gap: 1rem;">';
 
             for (const scaleName of scales) {
               try {
+                console.log(`Fetching info for scale: ${scaleName}`);
                 const infoJson = await window.__TAURI__.core.invoke(
                   "get_scale_info",
                   { scaleId: scaleName }
                 );
+                console.log(`Info for ${scaleName}:`, infoJson);
                 const info = JSON.parse(infoJson);
 
                 html += `
@@ -2503,8 +3607,11 @@ For more info, check the documentation folder.`);
             }
 
             html += "</div>";
+            console.log("Setting innerHTML for scaleDetails");
             detailsDiv.innerHTML = html;
+            console.log("Scale library loaded successfully");
           } else {
+            console.warn("No scales available");
             detailsDiv.innerHTML =
               '<p style="color: var(--text-light); text-align: center; padding: 2rem;">No scales available</p>';
           }
@@ -2521,6 +3628,385 @@ For more info, check the documentation folder.`);
         loadTheme();
         await init();
       })();
+
+      // POWER ANALYSIS FUNCTIONS
+      function togglePowerFields() {
+        const analysisType = document.getElementById("powerAnalysisType").value;
+        const targetField = document.getElementById("powerTargetField");
+        const nField = document.getElementById("powerNField");
+
+        if (analysisType === "a-priori") {
+          targetField.style.display = "block";
+          nField.style.display = "none";
+        } else {
+          targetField.style.display = "none";
+          nField.style.display = "block";
+        }
+      }
+
+      async function calculatePower() {
+        const analysisType = document.getElementById("powerAnalysisType").value;
+        const testType = document.getElementById("powerTestType").value;
+        const effectSize = parseFloat(
+          document.getElementById("powerEffectSize").value
+        );
+        const alpha = parseFloat(document.getElementById("powerAlpha").value);
+        const power = parseFloat(document.getElementById("powerTarget").value);
+        const n = parseInt(document.getElementById("powerN").value);
+
+        // Validation
+        if (isNaN(effectSize) || effectSize <= 0) {
+          showStatus("Effect size must be a positive number", "error");
+          return;
+        }
+        if (isNaN(alpha) || alpha <= 0 || alpha >= 1) {
+          showStatus("Alpha must be between 0 and 1", "error");
+          return;
+        }
+
+        try {
+          showStatus("Calculating power analysis...", "processing");
+
+          const result = await window.__TAURI__.core.invoke(
+            "run_power_analysis",
+            {
+              analysisType,
+              testType,
+              effectSize,
+              alpha,
+              power: analysisType === "a-priori" ? power : null,
+              n: analysisType === "post-hoc" ? n : null,
+            }
+          );
+
+          showStatus(result, "success");
+        } catch (error) {
+          console.error("Power analysis error:", error);
+          showStatus(`Power analysis failed:\n\n${error}`, "error");
+        }
+      }
+
+      // LONGITUDINAL ANALYSIS FUNCTIONS
+      let longT1Path = null;
+      let longT2Path = null;
+
+      async function selectLongitudinalFile(timePoint) {
+        try {
+          const filePath = await window.__TAURI__.core.invoke("pick_file");
+          if (!filePath) return;
+
+          if (timePoint === "t1") {
+            longT1Path = filePath;
+            document.getElementById("longT1Path").value = filePath
+              .split(/[\\/]/)
+              .pop();
+          } else {
+            longT2Path = filePath;
+            document.getElementById("longT2Path").value = filePath
+              .split(/[\\/]/)
+              .pop();
+          }
+        } catch (error) {
+          console.error("File selection error:", error);
+          showStatus(`Failed to select file: ${error}`, "error");
+        }
+      }
+
+      async function mergeLongitudinal() {
+        if (!longT1Path || !longT2Path) {
+          showStatus("Please select both Time 1 and Time 2 CSV files", "error");
+          return;
+        }
+
+        const idColumn = document.getElementById("longIdColumn").value.trim();
+        if (!idColumn) {
+          showStatus("Please enter the ID column name", "error");
+          return;
+        }
+
+        try {
+          showStatus("Merging longitudinal data...", "processing");
+
+          // Determine output path
+          const t1Folder = longT1Path.substring(
+            0,
+            longT1Path.lastIndexOf(/[\\/]/)
+          );
+          const outputPath =
+            t1Folder +
+            (t1Folder.endsWith("\\") || t1Folder.endsWith("/") ? "" : "\\") +
+            "merged_longitudinal.csv";
+
+          const result = await window.__TAURI__.core.invoke(
+            "run_longitudinal_merge",
+            {
+              t1Path: longT1Path,
+              t2Path: longT2Path,
+              idColumn,
+              outputPath,
+            }
+          );
+
+          showStatus(result, "success");
+
+          // Add action button
+          setTimeout(() => {
+            const statusDiv = document.getElementById("status");
+            if (statusDiv && !statusDiv.querySelector(".status-actions")) {
+              const actions = document.createElement("div");
+              actions.className = "status-actions";
+              actions.innerHTML = `
+                <button class="btn-status" onclick="openOutputFolder()" style="color: var(--success); font-weight: 600;">
+                  📂 Open Output Folder
+                </button>
+              `;
+              statusDiv.appendChild(actions);
+            }
+          }, 100);
+        } catch (error) {
+          console.error("Longitudinal merge error:", error);
+          showStatus(`Merge failed:\n\n${error}`, "error");
+        }
+      }
+
+      // UI/UX ENHANCEMENT FUNCTIONS
+
+      // Tab Switching System
+      function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+
+        // Show selected tab content
+        const contentId = 'content' + tabName.charAt(0).toUpperCase() + tabName.slice(1);
+        const content = document.getElementById(contentId);
+        
+        if (content) {
+          content.classList.add('active');
+          // Find and activate the corresponding tab button
+          const tabs = document.querySelectorAll('.tab');
+          tabs.forEach(tab => {
+            if (tab.textContent.toLowerCase().includes(tabName.toLowerCase()) ||
+                tab.onclick.toString().includes(`'${tabName}'`)) {
+              tab.classList.add('active');
+            }
+          });
+        }
+
+        // Update URL hash without scrolling
+        history.replaceState(null, null, '#' + tabName);
+      }
+
+      // Toast Notification System
+      function showToast(message, type = 'info') {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'toast';
+          toast.className = 'toast-notification';
+          document.body.appendChild(toast);
+        }
+
+        toast.className = `toast-notification ${type}`;
+        const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+        toast.innerHTML = `<span style="font-size: 1.5rem;">${icon}</span><span>${message}</span>`;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3000);
+      }
+
+      // Enhanced Progress Tracking
+      function updateProgressSteps(currentStep) {
+        const steps = document.querySelectorAll('.progress-step-indicator .progress-dot');
+        steps.forEach((dot, index) => {
+          if (index < currentStep) {
+            dot.classList.add('completed');
+            dot.classList.remove('active');
+          } else if (index === currentStep) {
+            dot.classList.add('active');
+            dot.classList.remove('completed');
+          } else {
+            dot.classList.remove('active', 'completed');
+          }
+        });
+      }
+
+      // Form Validation Enhancement
+      function validateInput(inputElement, validationFn, errorMessage) {
+        const value = inputElement.value;
+        const isValid = validationFn(value);
+        
+        if (!isValid) {
+          inputElement.classList.add('error');
+          let feedback = inputElement.nextElementSibling;
+          if (!feedback || !feedback.classList.contains('input-feedback')) {
+            feedback = document.createElement('div');
+            feedback.className = 'input-feedback error';
+            inputElement.after(feedback);
+          }
+          feedback.textContent = errorMessage;
+          feedback.classList.add('error');
+          return false;
+        } else {
+          inputElement.classList.remove('error');
+          const feedback = inputElement.nextElementSibling;
+          if (feedback && feedback.classList.contains('input-feedback')) {
+            feedback.remove();
+          }
+          return true;
+        }
+      }
+
+      // Loading Overlay
+      function showLoadingOverlay(message = 'Processing...') {
+        let overlay = document.getElementById('loadingOverlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'loadingOverlay';
+          overlay.className = 'loading-overlay';
+          overlay.innerHTML = `
+            <div class="loading-content">
+              <div class="loading-spinner"></div>
+              <div id="loadingMessage">${message}</div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+        }
+        document.getElementById('loadingMessage').textContent = message;
+        overlay.classList.add('show');
+      }
+
+      function hideLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+          overlay.classList.remove('show');
+        }
+      }
+
+      // Enhanced File Selection with Visual Feedback
+      async function enhancedFileSelect(type = 'csv') {
+        showLoadingOverlay('Opening file browser...');
+        try {
+          const filePath = type === 'csv' 
+            ? await window.__TAURI__.core.invoke("pick_file")
+            : await window.__TAURI__.core.invoke("pick_config");
+          
+          hideLoadingOverlay();
+          
+          if (filePath) {
+            showToast(`File selected: ${filePath.split(/[\\/]/).pop()}`, 'success');
+            return filePath;
+          }
+        } catch (error) {
+          hideLoadingOverlay();
+          showToast('Failed to select file', 'error');
+          throw error;
+        }
+      }
+
+      // Smooth Scroll to Element
+      function scrollToElement(elementId) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.style.animation = 'pulse 0.5s ease-out';
+          setTimeout(() => {
+            element.style.animation = '';
+          }, 500);
+        }
+      }
+
+      // Keyboard Shortcuts Enhancement
+      document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + 1-4 for tab switching
+        if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
+          e.preventDefault();
+          const tabs = ['basic', 'advanced', 'tools', 'results'];
+          switchTab(tabs[parseInt(e.key) - 1]);
+        }
+        
+        // Escape to close modals
+        if (e.key === 'Escape') {
+          closeExamples();
+          closeScaleBrowser();
+        }
+
+        // Ctrl/Cmd + S to save (if config editor is open)
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          if (isEditingConfig) {
+            validateConfig();
+          }
+        }
+      });
+
+      // Auto-save for config editor
+      let configSaveTimeout;
+      document.addEventListener('DOMContentLoaded', () => {
+        const configTextarea = document.getElementById('configTextarea');
+        if (configTextarea) {
+          configTextarea.addEventListener('input', () => {
+            clearTimeout(configSaveTimeout);
+            configSaveTimeout = setTimeout(() => {
+              // Auto-save indicator
+              const indicator = document.createElement('div');
+              indicator.style.cssText = 'position: fixed; top: 1rem; right: 1rem; padding: 0.5rem 1rem; background: var(--success); color: white; border-radius: 4px; font-size: 0.85rem; z-index: 9999;';
+              indicator.textContent = '💾 Config auto-saved';
+              document.body.appendChild(indicator);
+              setTimeout(() => indicator.remove(), 2000);
+            }, 2000);
+          });
+        }
+      });
+
+      // Initialize enhanced features
+      function initEnhancedUI() {
+        // Check URL hash for tab navigation
+        const hash = window.location.hash.slice(1);
+        if (hash && ['basic', 'advanced', 'tools', 'results'].includes(hash)) {
+          switchTab(hash);
+        }
+
+        // Add keyboard shortcut hint on first load
+        if (!localStorage.getItem('keyboardHintsShown')) {
+          setTimeout(() => {
+            showToast('💡 Tip: Use Ctrl+1-4 to switch tabs quickly!', 'info');
+            localStorage.setItem('keyboardHintsShown', 'true');
+          }, 2000);
+        }
+
+        // Initialize progress tracking
+        updateProgressSteps(0);
+      }
+
+      // Call initialization
+      setTimeout(initEnhancedUI, 500);
+
+      // Enhanced process data with better feedback
+      const originalProcessData = processData;
+      processData = async function() {
+        showLoadingOverlay('Initializing processing...');
+        updateProgressSteps(2);
+        
+        try {
+          await originalProcessData();
+          hideLoadingOverlay();
+          updateProgressSteps(3);
+          // Switch to results tab after successful processing
+          setTimeout(() => switchTab('results'), 1000);
+        } catch (error) {
+          hideLoadingOverlay();
+          showToast('Processing failed', 'error');
+        }
+      };
     </script>
   </body>
 </html>
